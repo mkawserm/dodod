@@ -11,7 +11,7 @@ type Query interface {
 }
 
 type Search interface {
-	Search(filter string, limit int) PageIterator
+	Search(q string, limit int) PageIterator
 }
 
 type PageIterator interface {
