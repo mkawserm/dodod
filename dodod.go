@@ -12,14 +12,18 @@ type IndexOpener interface {
 		config map[string]interface{}) (bleve.Index, error)
 }
 
-type Mutation interface {
-	Create(data []interface{}) error
-	Update(data []interface{}) error
-	Delete(data []interface{}) error
+type ModelRegistry interface {
+	RegisterModel(model interface{}) error
 }
 
 type Query interface {
 	Read(data []interface{}) (int, error)
+}
+
+type Mutation interface {
+	Create(data []interface{}) error
+	Update(data []interface{}) error
+	Delete(data []interface{}) error
 }
 
 type Search interface {
