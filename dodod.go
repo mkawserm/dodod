@@ -19,6 +19,7 @@ type DbCredentials interface {
 
 type ModelRegistry interface {
 	RegisterModel(model interface{}) error
+	RegisteredFields() []string
 }
 
 type Query interface {

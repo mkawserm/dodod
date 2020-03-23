@@ -41,8 +41,8 @@ type Db struct {
 	verifierCredentialsRW pasap.VerifierCredentialsRW
 	indexOpener           IndexOpener
 
-	indexMappingImpl *mapping.IndexMappingImpl
-	index            bleve.Index
+	indexMapping *mapping.IndexMappingImpl
+	index        bleve.Index
 
 	dbPath     string
 	dbPassword string
@@ -57,14 +57,14 @@ func (db *Db) Setup(dbCredentials DbCredentials,
 	encoderCredentialsRW pasap.EncoderCredentialsRW,
 	verifierCredentialsRW pasap.VerifierCredentialsRW,
 	indexOpener IndexOpener,
-	indexMappingImpl *mapping.IndexMappingImpl) {
+	indexMapping *mapping.IndexMappingImpl) {
 
 	db.dbCredentials = dbCredentials
 	db.passwordHasher = passwordHasher
 	db.encoderCredentialsRW = encoderCredentialsRW
 	db.verifierCredentialsRW = verifierCredentialsRW
 	db.indexOpener = indexOpener
-	db.indexMappingImpl = indexMappingImpl
+	db.indexMapping = indexMapping
 }
 
 func (db *Db) SetDbCredentials(credentials DbCredentials) {
@@ -87,15 +87,19 @@ func (db *Db) SetIndexOpener(opener IndexOpener) {
 	db.indexOpener = opener
 }
 
-func (db *Db) SetIndexMappingImpl(indexMappingImpl *mapping.IndexMappingImpl) {
-	db.indexMappingImpl = indexMappingImpl
+func (db *Db) SetIndexMapping(indexMapping *mapping.IndexMappingImpl) {
+	db.indexMapping = indexMapping
+}
+
+func (db *Db) GetIndexMapping() *mapping.IndexMappingImpl {
+	return db.indexMapping
 }
 
 func (db *Db) SetupDefaults() {
 	db.passwordHasher = pasap.NewArgon2idHasher()
 	db.encoderCredentialsRW = &pasap.ByteBasedEncoderCredentials{}
 	db.verifierCredentialsRW = &pasap.ByteBasedVerifierCredentials{}
-	db.indexMappingImpl = bleve.NewIndexMapping()
+	db.indexMapping = bleve.NewIndexMapping()
 	db.indexOpener = &BleveIndexOpener{}
 }
 
@@ -241,7 +245,7 @@ func (db *Db) ensurePath() {
 
 func (db *Db) openDb() error {
 	index, err := db.indexOpener.BleveIndex(db.dbPath,
-		db.indexMappingImpl,
+		db.indexMapping,
 		upsidedown.Name,
 		map[string]interface{}{
 			"BdodbConfig": &bdodb.Config{

@@ -142,7 +142,7 @@ func TestDb_Setup(t *testing.T) {
 		db.SetEncoderCredentialsRW(&pasap.ByteBasedEncoderCredentials{})
 		db.SetVerifierCredentialsRW(&pasap.ByteBasedVerifierCredentials{})
 		db.SetIndexOpener(&BleveIndexOpener{})
-		db.SetIndexMappingImpl(bleve.NewIndexMapping())
+		db.SetIndexMapping(bleve.NewIndexMapping())
 		err := db.Open()
 
 		if err != nil {
