@@ -12,12 +12,17 @@ type IndexOpener interface {
 		config map[string]interface{}) (bleve.Index, error)
 }
 
+type DbCredentials interface {
+	ReadPath() (dbPath string, err error)
+	ReadPassword() (password string, err error)
+}
+
 type ModelRegistry interface {
 	RegisterModel(model interface{}) error
 }
 
 type Query interface {
-	Read(data []interface{}) (int, error)
+	Read(data []interface{}) (uint64, error)
 }
 
 type Mutation interface {
@@ -27,21 +32,18 @@ type Mutation interface {
 }
 
 type Search interface {
-	Search(q string, limit int) PageIterator
+	Search(query string, from uint64) (total uint64, result []interface{}, err error)
 }
 
-type PageIterator interface {
-	NextPage()
-	HasNextPage() bool
-
-	TotalPage() uint64
-	TotalResults() uint64
-
-	CurrentPageNumber() uint64
-	CurrentPageResults() []interface{}
+type ComplexSearch interface {
+	ComplexSearch(query, sortBy, queryType string,
+		from uint64, limit uint64) (total uint64, result []interface{}, err error)
 }
 
-type DbCredentials interface {
-	ReadPath() (dbPath string, err error)
-	ReadPassword() (password string, err error)
+type Dodod interface {
+	Query
+	Mutation
+	Search
+	ComplexSearch
+	ModelRegistry
 }
