@@ -16,6 +16,8 @@ var ErrInvalidBase = errors.New(`dodod: invalid base`)
 var ErrInvalidDoc = errors.New(`dodod: invalid doc, nil pointer`)
 var ErrInvalidDocNotStruct = errors.New(`dodod: invalid doc, not a struct`)
 var ErrUnknownBaseType = errors.New(`dodod: unknown base type`)
+var ErrNonBooleanValueForBooleanField = errors.New(`dodod: non-boolean value for boolean field`)
+var ErrUnknownMappingField = errors.New(`dodod: tried to set mapping field of unknown type`)
 
 func ExtractFields(document Document) map[string]string {
 	data := make(map[string]string)
@@ -179,18 +181,19 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 						case reflect.Bool:
 							b, err := strconv.ParseBool(kv[1])
 							if err != nil {
-								return errors.New(`non-boolean value for boolean field`)
+								return ErrNonBooleanValueForBooleanField
 							}
 							f.SetBool(b)
 						case reflect.String:
 							f.SetString(kv[1])
 						default:
-							return errors.New(`tried to set mapping field of unknown type`)
+							return ErrUnknownMappingField
 						}
 					}
 				}
 			}
 		}
+
 		docMapping.AddFieldMappingsAt(field.Name, fieldMap)
 	}
 
