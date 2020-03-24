@@ -18,6 +18,14 @@ type mockDocumentStruct struct {
 	MyType   struct{}      `json:"my_type"`
 }
 
+func (m *mockDocumentStruct) Type() string {
+	return "mockDocumentStruct"
+}
+
+func (m *mockDocumentStruct) GetId() string {
+	return m.Id
+}
+
 func TestExtractFields(t *testing.T) {
 	t.Helper()
 	fmt.Println(ExtractFields(&mockDocumentStruct{}))

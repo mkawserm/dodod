@@ -35,7 +35,7 @@ func extractFields(t reflect.Type, data map[string]string) {
 	}
 }
 
-func GetId(document Document) string {
+func GetId(document interface{}) string {
 	return getId(reflect.TypeOf(document), reflect.ValueOf(document))
 }
 
