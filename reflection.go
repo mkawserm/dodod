@@ -12,6 +12,11 @@ import (
 	"time"
 )
 
+var ErrInvalidBase = errors.New(`dodod: invalid base`)
+var ErrInvalidDoc = errors.New(`dodod: invalid doc, nil pointer`)
+var ErrInvalidDocNotStruct = errors.New(`dodod: invalid doc, not a struct`)
+var ErrUnknownBaseType = errors.New(`dodod: unknown base type`)
+
 func ExtractFields(document Document) map[string]string {
 	data := make(map[string]string)
 	extractFields(reflect.TypeOf(document), data)
@@ -94,15 +99,15 @@ func getId(t reflect.Type, v reflect.Value) string {
 func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName ...string) (err error) {
 	baseValue := reflect.ValueOf(base)
 	if !baseValue.CanInterface() {
-		return errors.New(`invalid base`)
+		return ErrInvalidBase
 	}
 
 	docValue := reflect.ValueOf(doc).Elem()
 	if !docValue.IsValid() {
-		return errors.New(`invalid doc, nil pointer`)
+		return ErrInvalidDoc
 	}
 	if docValue.Kind() != reflect.Struct {
-		return errors.New(`invalid doc, not a struct`)
+		return ErrInvalidDocNotStruct
 	}
 	docType := docValue.Type()
 	docMapping := bleve.NewDocumentMapping()
@@ -201,7 +206,7 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 			b.AddSubDocumentMapping(doc.Type(), docMapping)
 		}
 	default:
-		return errors.New(`unknown base type`)
+		return ErrUnknownBaseType
 	}
 
 	return

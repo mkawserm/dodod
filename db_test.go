@@ -121,8 +121,7 @@ func TestDb_Setup(t *testing.T) {
 			pasap.NewArgon2idHasher(),
 			&pasap.ByteBasedEncoderCredentials{},
 			&pasap.ByteBasedVerifierCredentials{},
-			&BleveIndexOpener{},
-			bleve.NewIndexMapping())
+			&BleveIndexOpener{})
 		err := db.Open()
 
 		if err != nil {
@@ -142,7 +141,7 @@ func TestDb_Setup(t *testing.T) {
 		db.SetEncoderCredentialsRW(&pasap.ByteBasedEncoderCredentials{})
 		db.SetVerifierCredentialsRW(&pasap.ByteBasedVerifierCredentials{})
 		db.SetIndexOpener(&BleveIndexOpener{})
-		db.SetIndexMapping(bleve.NewIndexMapping())
+		//db.SetIndexMapping(bleve.NewIndexMapping())
 		err := db.Open()
 
 		if err != nil {

@@ -1,6 +1,6 @@
 package dodod
 
-type ModelRegistry interface {
-	RegisterModel(model interface{}) error
+type DocumentRegistry interface {
+	RegisterDocument(model Document) error
 	GetRegisteredFields() []string
 }

@@ -2,6 +2,7 @@ package dodod
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/mapping"
@@ -10,6 +11,12 @@ import (
 	"io/ioutil"
 	"os"
 )
+
+var ErrIdCanNotBeEmpty = errors.New("dodod: id can not be empty")
+
+// ErrFieldTypeMismatch will occur if current field already registered as different type
+var ErrFieldTypeMismatch = errors.New("dodod: field type mismatch")
+var ErrDocumentTypeAlreadyRegistered = errors.New("dodod: document type already registered")
 
 type BleveIndexOpener struct {
 }
@@ -51,21 +58,35 @@ type Db struct {
 	secretKey           []byte
 	encodedKey          string
 	isPasswordProtected bool
+
+	fieldsRegistryCache   map[string]string
+	documentRegistryCache map[string]Document
+}
+
+func (db *Db) initAll() {
+	if db.fieldsRegistryCache == nil {
+		db.fieldsRegistryCache = make(map[string]string)
+	}
+
+	if db.documentRegistryCache == nil {
+		db.documentRegistryCache = make(map[string]Document)
+	}
 }
 
 func (db *Db) Setup(dbCredentials DbCredentials,
 	passwordHasher pasap.PasswordHasher,
 	encoderCredentialsRW pasap.EncoderCredentialsRW,
 	verifierCredentialsRW pasap.VerifierCredentialsRW,
-	indexOpener IndexOpener,
-	indexMapping *mapping.IndexMappingImpl) {
+	indexOpener IndexOpener) {
 
 	db.dbCredentials = dbCredentials
 	db.passwordHasher = passwordHasher
 	db.encoderCredentialsRW = encoderCredentialsRW
 	db.verifierCredentialsRW = verifierCredentialsRW
 	db.indexOpener = indexOpener
-	db.indexMapping = indexMapping
+
+	db.initAll()
+	db.initIndexMapping()
 }
 
 func (db *Db) SetDbCredentials(credentials DbCredentials) {
@@ -88,20 +109,22 @@ func (db *Db) SetIndexOpener(opener IndexOpener) {
 	db.indexOpener = opener
 }
 
-func (db *Db) SetIndexMapping(indexMapping *mapping.IndexMappingImpl) {
-	db.indexMapping = indexMapping
-}
+//func (db *Db) SetIndexMapping(indexMapping *mapping.IndexMappingImpl) {
+//	db.indexMapping = indexMapping
+//}
 
-func (db *Db) GetIndexMapping() *mapping.IndexMappingImpl {
-	return db.indexMapping
-}
+//func (db *Db) GetIndexMapping() *mapping.IndexMappingImpl {
+//	return db.indexMapping
+//}
 
 func (db *Db) SetupDefaults() {
 	db.passwordHasher = pasap.NewArgon2idHasher()
 	db.encoderCredentialsRW = &pasap.ByteBasedEncoderCredentials{}
 	db.verifierCredentialsRW = &pasap.ByteBasedVerifierCredentials{}
-	db.indexMapping = bleve.NewIndexMapping()
 	db.indexOpener = &BleveIndexOpener{}
+
+	db.initAll()
+	db.initIndexMapping()
 }
 
 func (db *Db) Open() error {
@@ -132,6 +155,7 @@ func (db *Db) Open() error {
 			return writeError
 		}
 	}
+
 	return db.openDb()
 }
 
@@ -140,6 +164,106 @@ func (db *Db) Close() error {
 		return db.index.Close()
 	}
 	return nil
+}
+
+func (db *Db) initIndexMapping() {
+	if db.indexMapping == nil {
+		db.indexMapping = bleve.NewIndexMapping()
+	}
+}
+
+func (db *Db) RegisterDocument(document Document) error {
+	db.initAll()
+	db.initIndexMapping()
+
+	if _, exists := db.documentRegistryCache[document.Type()]; exists {
+		return ErrDocumentTypeAlreadyRegistered
+	}
+
+	canRegister := true
+	fields := ExtractFields(document)
+	for k, v := range fields {
+		f, exists := db.fieldsRegistryCache[k]
+		if exists {
+			if f != v {
+				canRegister = false
+				break
+			}
+		}
+	}
+
+	if !canRegister {
+		return ErrFieldTypeMismatch
+	}
+	if err := registerDocumentMapping(db.indexMapping, document); err != nil {
+		return err
+	}
+
+	for k, v := range fields {
+		_, exists := db.fieldsRegistryCache[k]
+		if !exists {
+			db.fieldsRegistryCache[k] = v
+		}
+	}
+
+	db.documentRegistryCache[document.Type()] = document
+
+	return nil
+}
+
+func (db *Db) GetRegisteredFields() []string {
+	keys := make([]string, 0, len(db.fieldsRegistryCache))
+	for k := range db.fieldsRegistryCache {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (db *Db) Create(data []Document) error {
+	batch := db.index.NewBatch()
+	for _, d := range data {
+		id := d.GetId()
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		if err := batch.Index(id, d); err != nil {
+			return err
+		}
+	}
+
+	return db.index.Batch(batch)
+}
+
+func (db *Db) Update(data []Document) error {
+	batch := db.index.NewBatch()
+	for _, d := range data {
+		id := d.GetId()
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		// batch.Delete(id)
+
+		if err := batch.Index(id, d); err != nil {
+			return err
+		}
+	}
+
+	return db.index.Batch(batch)
+}
+
+func (db *Db) Delete(data []Document) error {
+	batch := db.index.NewBatch()
+	for _, d := range data {
+		id := d.GetId()
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+		batch.Delete(id)
+	}
+
+	return db.index.Batch(batch)
 }
 
 func (db *Db) isDbExists() bool {

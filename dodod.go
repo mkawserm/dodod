@@ -5,5 +5,5 @@ type Dodod interface {
 	Mutation
 	Search
 	ComplexSearch
-	ModelRegistry
+	DocumentRegistry
 }
