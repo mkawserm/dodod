@@ -550,9 +550,9 @@ func (db *Database) writeConfig() (bool, error) {
 }
 
 func (db *Database) ensurePath() {
-	if _, err := os.Stat(db.dbPath); err != nil {
-		_ = os.MkdirAll(db.dbPath, os.FileMode(0700))
-	}
+	//if _, err := os.Stat(db.dbPath); err != nil {
+	//	_ = os.MkdirAll(db.dbPath, os.FileMode(0700))
+	//}
 
 	if _, err := os.Stat(db.dbPath + "/database"); err != nil {
 		_ = os.MkdirAll(db.dbPath+"/database", os.FileMode(0700))
