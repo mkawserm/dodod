@@ -7,7 +7,7 @@ import (
 
 type IndexOpener interface {
 	BleveIndex(dbPath string,
-		indexMappingImpl *mapping.IndexMappingImpl,
+		indexMapping *mapping.IndexMappingImpl,
 		indexName string,
 		config map[string]interface{}) (bleve.Index, error)
 }
@@ -47,4 +47,9 @@ type Dodod interface {
 	Search
 	ComplexSearch
 	ModelRegistry
+}
+
+type Document interface {
+	mapping.Classifier
+	GetId() string
 }

@@ -3,7 +3,7 @@ package dodod
 import (
 	"encoding/json"
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/index/upsidedown"
+	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/mkawserm/bdodb"
 	"github.com/mkawserm/pasap"
@@ -15,10 +15,11 @@ type BleveIndexOpener struct {
 }
 
 func (b *BleveIndexOpener) BleveIndex(dbPath string,
-	indexMappingImpl *mapping.IndexMappingImpl,
+	indexMapping *mapping.IndexMappingImpl,
 	indexName string,
 	config map[string]interface{}) (bleve.Index, error) {
-	return bdodb.BleveIndex(dbPath, indexMappingImpl, indexName, config)
+
+	return bdodb.BleveIndex(dbPath, indexMapping, indexName, config)
 }
 
 type DbCredentialsBasic struct {
@@ -246,7 +247,7 @@ func (db *Db) ensurePath() {
 func (db *Db) openDb() error {
 	index, err := db.indexOpener.BleveIndex(db.dbPath,
 		db.indexMapping,
-		upsidedown.Name,
+		scorch.Name,
 		map[string]interface{}{
 			"BdodbConfig": &bdodb.Config{
 				EncryptionKey: db.secretKey,
