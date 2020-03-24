@@ -3,15 +3,19 @@ package dodod
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v2/options"
 	"github.com/mkawserm/bdodb"
 	"github.com/mkawserm/pasap"
 	"io/ioutil"
 	"os"
 )
+
+var ErrDatabaseTransactionFailed = errors.New("dodod: database transaction failed")
+var ErrIndexingTransactionFailed = errors.New("dodod: indexing transaction failed")
 
 var ErrIdCanNotBeEmpty = errors.New("dodod: id can not be empty")
 var ErrDatabaseIsNotOpen = errors.New("dodod: database is not open")
@@ -52,7 +56,6 @@ type Database struct {
 	indexOpener           IndexOpener
 
 	indexMapping *mapping.IndexMappingImpl
-	index        bleve.Index
 
 	dbPath     string
 	dbPassword string
@@ -64,6 +67,9 @@ type Database struct {
 
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]Document
+
+	internalIndex bleve.Index
+	internalDb    *badger.DB
 }
 
 func (db *Database) initAll() {
@@ -167,9 +173,25 @@ func (db *Database) Open() error {
 
 func (db *Database) Close() error {
 	db.isDbReady = false
-	if db.index != nil {
-		return db.index.Close()
+
+	var err1 error
+	var err2 error
+
+	if db.internalIndex != nil {
+		err1 = db.internalIndex.Close()
 	}
+	if db.internalDb != nil {
+		err2 = db.internalDb.Close()
+	}
+
+	if err1 == nil && err2 == nil {
+		return nil
+	} else if err1 != nil {
+		return err1
+	} else if err2 != nil {
+		return err2
+	}
+
 	return nil
 }
 
@@ -235,11 +257,25 @@ func (db *Database) Create(data []Document) error {
 		return ErrDatabaseIsNotOpen
 	}
 
-	batch := db.index.NewBatch()
+	var err1 error
+	var err2 error
+
+	internalBatchTxn := db.internalDb.NewTransaction(true)
+	defer internalBatchTxn.Discard()
+
+	batch := db.internalIndex.NewBatch()
 	for _, d := range data {
 		id := d.GetId()
 		if id == "" {
 			return ErrIdCanNotBeEmpty
+		}
+
+		if jsonData, err := json.Marshal(d); err == nil {
+			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
+				return err
+			}
+		} else {
+			return err
 		}
 
 		if err := batch.Index(id, d); err != nil {
@@ -247,7 +283,17 @@ func (db *Database) Create(data []Document) error {
 		}
 	}
 
-	return db.index.Batch(batch)
+	err1 = internalBatchTxn.Commit()
+	if err1 != nil {
+		return ErrDatabaseTransactionFailed
+	}
+
+	err2 = db.internalIndex.Batch(batch)
+	if err2 != nil {
+		return ErrIndexingTransactionFailed
+	}
+
+	return nil
 }
 
 func (db *Database) Update(data []Document) error {
@@ -255,21 +301,48 @@ func (db *Database) Update(data []Document) error {
 		return ErrDatabaseIsNotOpen
 	}
 
-	batch := db.index.NewBatch()
+	var err1 error
+	var err2 error
+
+	internalBatchTxn := db.internalDb.NewTransaction(true)
+	defer internalBatchTxn.Discard()
+
+	batch := db.internalIndex.NewBatch()
 	for _, d := range data {
 		id := d.GetId()
 		if id == "" {
 			return ErrIdCanNotBeEmpty
 		}
 
-		// batch.Delete(id)
+		if err := internalBatchTxn.Delete([]byte(id)); err != nil {
+			return err
+		}
 
+		if jsonData, err := json.Marshal(d); err == nil {
+			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+
+		// batch.Delete(id)
 		if err := batch.Index(id, d); err != nil {
 			return err
 		}
 	}
 
-	return db.index.Batch(batch)
+	err1 = internalBatchTxn.Commit()
+	if err1 != nil {
+		return ErrDatabaseTransactionFailed
+	}
+
+	err2 = db.internalIndex.Batch(batch)
+	if err2 != nil {
+		return ErrIndexingTransactionFailed
+	}
+
+	return nil
 }
 
 func (db *Database) Delete(data []Document) error {
@@ -277,7 +350,98 @@ func (db *Database) Delete(data []Document) error {
 		return ErrDatabaseIsNotOpen
 	}
 
-	batch := db.index.NewBatch()
+	var err1 error
+	var err2 error
+
+	internalBatchTxn := db.internalDb.NewTransaction(true)
+	defer internalBatchTxn.Discard()
+
+	batch := db.internalIndex.NewBatch()
+	for _, d := range data {
+		id := d.GetId()
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		if err := internalBatchTxn.Delete([]byte(id)); err != nil {
+			return err
+		}
+
+		batch.Delete(id)
+	}
+
+	err1 = internalBatchTxn.Commit()
+	if err1 != nil {
+		return ErrDatabaseTransactionFailed
+	}
+
+	err2 = db.internalIndex.Batch(batch)
+	if err2 != nil {
+		return ErrIndexingTransactionFailed
+	}
+
+	return nil
+}
+
+func (db *Database) Read(data []Document) (uint64, error) {
+	if !db.IsDatabaseReady() {
+		return 0, ErrDatabaseIsNotOpen
+	}
+
+	internalBatchTxn := db.internalDb.NewTransaction(false)
+	defer internalBatchTxn.Discard()
+
+	var readCount uint64 = 0
+	for _, d := range data {
+		id := d.GetId()
+		if id == "" {
+			continue
+		}
+
+		if item, err := internalBatchTxn.Get([]byte(id)); err == nil {
+			if value, err := item.ValueCopy(nil); err == nil {
+				if err := json.Unmarshal(value, d); err == nil {
+					readCount = readCount + 1
+				} else {
+					return readCount, err
+				}
+			} else {
+				return readCount, err
+			}
+		} else {
+			return readCount, err
+		}
+	}
+
+	return readCount, nil
+}
+
+func (db *Database) UpdateIndex(data []Document) error {
+	if !db.IsDatabaseReady() {
+		return ErrDatabaseIsNotOpen
+	}
+
+	batch := db.internalIndex.NewBatch()
+	for _, d := range data {
+		id := d.GetId()
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		if err := batch.Index(id, d); err != nil {
+			return err
+		}
+	}
+
+	return db.internalIndex.Batch(batch)
+}
+
+func (db *Database) DeleteIndex(data []Document) error {
+	if !db.IsDatabaseReady() {
+		return ErrDatabaseIsNotOpen
+	}
+
+	batch := db.internalIndex.NewBatch()
 	for _, d := range data {
 		id := d.GetId()
 		if id == "" {
@@ -286,29 +450,7 @@ func (db *Database) Delete(data []Document) error {
 		batch.Delete(id)
 	}
 
-	return db.index.Batch(batch)
-}
-
-func (db *Database) Read(data []Document) (uint64, error) {
-	if !db.IsDatabaseReady() {
-		return 0, ErrDatabaseIsNotOpen
-	}
-
-	var readCount uint64 = 0
-	for _, d := range data {
-		id := d.GetId()
-		if id == "" {
-			continue
-		}
-		if doc, err := db.index.Document(id); err == nil {
-			readCount = readCount + 1
-			fmt.Println(doc)
-		} else {
-			return readCount, err
-		}
-	}
-
-	return readCount, nil
+	return db.internalIndex.Batch(batch)
 }
 
 func (db *Database) isDbExists() bool {
@@ -411,6 +553,10 @@ func (db *Database) ensurePath() {
 	if _, err := os.Stat(db.dbPath); err != nil {
 		_ = os.MkdirAll(db.dbPath, os.FileMode(0700))
 	}
+
+	if _, err := os.Stat(db.dbPath + "/database"); err != nil {
+		_ = os.MkdirAll(db.dbPath+"/database", os.FileMode(0700))
+	}
 }
 
 func (db *Database) openDb() error {
@@ -427,7 +573,23 @@ func (db *Database) openDb() error {
 		return err
 	}
 
-	db.index = index
+	/* Main DataStore */
+	opt := badger.DefaultOptions(db.dbPath + "/database")
+	opt.ReadOnly = false
+	opt.Truncate = true
+	opt.TableLoadingMode = options.LoadToRAM
+	opt.ValueLogLoadingMode = options.MemoryMap
+	opt.Compression = options.Snappy
+	opt.EncryptionKey = db.secretKey
+
+	if badgerDb, err := badger.Open(opt); err != nil {
+		_ = index.Close()
+		return err
+	} else {
+		db.internalDb = badgerDb
+	}
+
+	db.internalIndex = index
 	db.isDbReady = true
 
 	return nil

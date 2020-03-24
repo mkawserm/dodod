@@ -11,7 +11,6 @@ import (
 
 func cleanupDb(t *testing.T, path string) {
 	t.Helper()
-
 	err := os.RemoveAll(path)
 	if err != nil {
 		t.Fatal(err)
@@ -155,7 +154,7 @@ func TestDb_Setup(t *testing.T) {
 }
 
 /* Mocking failure */
-var mockErrOpenIndex = errors.New("mock: failed to open index")
+var mockErrOpenIndex = errors.New("mock: failed to open internalIndex")
 
 type mockIndexOpener struct {
 }
@@ -199,7 +198,7 @@ func TestMockOpenFailure(t *testing.T) {
 		Path:     dbPath,
 	}
 
-	t.Run("Open index failure", func(t *testing.T) {
+	t.Run("Open internalIndex failure", func(t *testing.T) {
 		db := &Database{}
 		defer cleanupDb(t, dbPath)
 		db.SetupDefaults()
