@@ -3,6 +3,7 @@ package dodod
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/mapping"
@@ -13,6 +14,7 @@ import (
 )
 
 var ErrIdCanNotBeEmpty = errors.New("dodod: id can not be empty")
+var ErrDatabaseIsNotOpen = errors.New("dodod: database is not open")
 
 // ErrFieldTypeMismatch will occur if current field already registered as different type
 var ErrFieldTypeMismatch = errors.New("dodod: field type mismatch")
@@ -58,6 +60,7 @@ type Db struct {
 	secretKey           []byte
 	encodedKey          string
 	isPasswordProtected bool
+	isDbOpen            bool
 
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]Document
@@ -128,6 +131,9 @@ func (db *Db) SetupDefaults() {
 }
 
 func (db *Db) Open() error {
+	db.initAll()
+	db.initIndexMapping()
+
 	if path, err := db.dbCredentials.ReadPath(); err != nil {
 		return err
 	} else {
@@ -160,6 +166,7 @@ func (db *Db) Open() error {
 }
 
 func (db *Db) Close() error {
+	db.isDbOpen = false
 	if db.index != nil {
 		return db.index.Close()
 	}
@@ -220,6 +227,10 @@ func (db *Db) GetRegisteredFields() []string {
 }
 
 func (db *Db) Create(data []Document) error {
+	if !db.isDbOpen {
+		return ErrDatabaseIsNotOpen
+	}
+
 	batch := db.index.NewBatch()
 	for _, d := range data {
 		id := d.GetId()
@@ -236,6 +247,10 @@ func (db *Db) Create(data []Document) error {
 }
 
 func (db *Db) Update(data []Document) error {
+	if !db.isDbOpen {
+		return ErrDatabaseIsNotOpen
+	}
+
 	batch := db.index.NewBatch()
 	for _, d := range data {
 		id := d.GetId()
@@ -254,6 +269,10 @@ func (db *Db) Update(data []Document) error {
 }
 
 func (db *Db) Delete(data []Document) error {
+	if !db.isDbOpen {
+		return ErrDatabaseIsNotOpen
+	}
+
 	batch := db.index.NewBatch()
 	for _, d := range data {
 		id := d.GetId()
@@ -264,6 +283,28 @@ func (db *Db) Delete(data []Document) error {
 	}
 
 	return db.index.Batch(batch)
+}
+
+func (db *Db) Read(data []Document) (uint64, error) {
+	if !db.isDbOpen {
+		return 0, ErrDatabaseIsNotOpen
+	}
+
+	var readCount uint64 = 0
+	for _, d := range data {
+		id := d.GetId()
+		if id == "" {
+			continue
+		}
+		if doc, err := db.index.Document(id); err == nil {
+			readCount = readCount + 1
+			fmt.Println(doc)
+		} else {
+			return readCount, err
+		}
+	}
+
+	return readCount, nil
 }
 
 func (db *Db) isDbExists() bool {
@@ -381,7 +422,9 @@ func (db *Db) openDb() error {
 	if err != nil {
 		return err
 	}
+
 	db.index = index
+	db.isDbOpen = true
 
 	return nil
 }
