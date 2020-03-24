@@ -44,7 +44,7 @@ func (d *DbCredentialsBasic) ReadPassword() (password string, err error) {
 	return d.Password, nil
 }
 
-type Db struct {
+type Database struct {
 	dbCredentials         DbCredentials
 	passwordHasher        pasap.PasswordHasher
 	encoderCredentialsRW  pasap.EncoderCredentialsRW
@@ -60,13 +60,13 @@ type Db struct {
 	secretKey           []byte
 	encodedKey          string
 	isPasswordProtected bool
-	isDbOpen            bool
+	isDbReady           bool
 
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]Document
 }
 
-func (db *Db) initAll() {
+func (db *Database) initAll() {
 	if db.fieldsRegistryCache == nil {
 		db.fieldsRegistryCache = make(map[string]string)
 	}
@@ -76,7 +76,7 @@ func (db *Db) initAll() {
 	}
 }
 
-func (db *Db) Setup(dbCredentials DbCredentials,
+func (db *Database) Setup(dbCredentials DbCredentials,
 	passwordHasher pasap.PasswordHasher,
 	encoderCredentialsRW pasap.EncoderCredentialsRW,
 	verifierCredentialsRW pasap.VerifierCredentialsRW,
@@ -92,35 +92,35 @@ func (db *Db) Setup(dbCredentials DbCredentials,
 	db.initIndexMapping()
 }
 
-func (db *Db) SetDbCredentials(credentials DbCredentials) {
+func (db *Database) SetDbCredentials(credentials DbCredentials) {
 	db.dbCredentials = credentials
 }
 
-func (db *Db) SetPasswordHasher(passwordHasher pasap.PasswordHasher) {
+func (db *Database) SetPasswordHasher(passwordHasher pasap.PasswordHasher) {
 	db.passwordHasher = passwordHasher
 }
 
-func (db *Db) SetEncoderCredentialsRW(encoderCredentialsRW pasap.EncoderCredentialsRW) {
+func (db *Database) SetEncoderCredentialsRW(encoderCredentialsRW pasap.EncoderCredentialsRW) {
 	db.encoderCredentialsRW = encoderCredentialsRW
 }
 
-func (db *Db) SetVerifierCredentialsRW(verifierCredentialsRW pasap.VerifierCredentialsRW) {
+func (db *Database) SetVerifierCredentialsRW(verifierCredentialsRW pasap.VerifierCredentialsRW) {
 	db.verifierCredentialsRW = verifierCredentialsRW
 }
 
-func (db *Db) SetIndexOpener(opener IndexOpener) {
+func (db *Database) SetIndexOpener(opener IndexOpener) {
 	db.indexOpener = opener
 }
 
-//func (db *Db) SetIndexMapping(indexMapping *mapping.IndexMappingImpl) {
+//func (db *Database) SetIndexMapping(indexMapping *mapping.IndexMappingImpl) {
 //	db.indexMapping = indexMapping
 //}
 
-//func (db *Db) GetIndexMapping() *mapping.IndexMappingImpl {
+//func (db *Database) GetIndexMapping() *mapping.IndexMappingImpl {
 //	return db.indexMapping
 //}
 
-func (db *Db) SetupDefaults() {
+func (db *Database) SetupDefaults() {
 	db.passwordHasher = pasap.NewArgon2idHasher()
 	db.encoderCredentialsRW = &pasap.ByteBasedEncoderCredentials{}
 	db.verifierCredentialsRW = &pasap.ByteBasedVerifierCredentials{}
@@ -130,7 +130,7 @@ func (db *Db) SetupDefaults() {
 	db.initIndexMapping()
 }
 
-func (db *Db) Open() error {
+func (db *Database) Open() error {
 	db.initAll()
 	db.initIndexMapping()
 
@@ -165,21 +165,21 @@ func (db *Db) Open() error {
 	return db.openDb()
 }
 
-func (db *Db) Close() error {
-	db.isDbOpen = false
+func (db *Database) Close() error {
+	db.isDbReady = false
 	if db.index != nil {
 		return db.index.Close()
 	}
 	return nil
 }
 
-func (db *Db) initIndexMapping() {
+func (db *Database) initIndexMapping() {
 	if db.indexMapping == nil {
 		db.indexMapping = bleve.NewIndexMapping()
 	}
 }
 
-func (db *Db) RegisterDocument(document Document) error {
+func (db *Database) RegisterDocument(document Document) error {
 	db.initAll()
 	db.initIndexMapping()
 
@@ -218,7 +218,7 @@ func (db *Db) RegisterDocument(document Document) error {
 	return nil
 }
 
-func (db *Db) GetRegisteredFields() []string {
+func (db *Database) GetRegisteredFields() []string {
 	keys := make([]string, 0, len(db.fieldsRegistryCache))
 	for k := range db.fieldsRegistryCache {
 		keys = append(keys, k)
@@ -226,8 +226,12 @@ func (db *Db) GetRegisteredFields() []string {
 	return keys
 }
 
-func (db *Db) Create(data []Document) error {
-	if !db.isDbOpen {
+func (db *Database) IsDatabaseReady() bool {
+	return db.isDbReady
+}
+
+func (db *Database) Create(data []Document) error {
+	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
 
@@ -246,8 +250,8 @@ func (db *Db) Create(data []Document) error {
 	return db.index.Batch(batch)
 }
 
-func (db *Db) Update(data []Document) error {
-	if !db.isDbOpen {
+func (db *Database) Update(data []Document) error {
+	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
 
@@ -268,8 +272,8 @@ func (db *Db) Update(data []Document) error {
 	return db.index.Batch(batch)
 }
 
-func (db *Db) Delete(data []Document) error {
-	if !db.isDbOpen {
+func (db *Database) Delete(data []Document) error {
+	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
 
@@ -285,8 +289,8 @@ func (db *Db) Delete(data []Document) error {
 	return db.index.Batch(batch)
 }
 
-func (db *Db) Read(data []Document) (uint64, error) {
-	if !db.isDbOpen {
+func (db *Database) Read(data []Document) (uint64, error) {
+	if !db.IsDatabaseReady() {
 		return 0, ErrDatabaseIsNotOpen
 	}
 
@@ -307,12 +311,12 @@ func (db *Db) Read(data []Document) (uint64, error) {
 	return readCount, nil
 }
 
-func (db *Db) isDbExists() bool {
+func (db *Database) isDbExists() bool {
 	fi, err := os.Stat(db.dbPath + "/dodod.json")
 	return err == nil && fi != nil
 }
 
-func (db *Db) readConfig() (bool, error) {
+func (db *Database) readConfig() (bool, error) {
 	data, _ := ioutil.ReadFile(db.dbPath + "/dodod.json")
 	if len(data) == 0 {
 		return false, ErrInvalidConfigFile
@@ -341,7 +345,7 @@ func (db *Db) readConfig() (bool, error) {
 	return true, nil
 }
 
-func (db *Db) isPasswordValid() (bool, error) {
+func (db *Database) isPasswordValid() (bool, error) {
 	if err := db.verifierCredentialsRW.SetPassword([]byte(db.dbPassword)); err != nil {
 		return false, err
 	}
@@ -364,7 +368,7 @@ func (db *Db) isPasswordValid() (bool, error) {
 	}
 }
 
-func (db *Db) writeConfig() (bool, error) {
+func (db *Database) writeConfig() (bool, error) {
 	db.isPasswordProtected = false
 	db.encodedKey = ""
 
@@ -403,13 +407,13 @@ func (db *Db) writeConfig() (bool, error) {
 	return true, nil
 }
 
-func (db *Db) ensurePath() {
+func (db *Database) ensurePath() {
 	if _, err := os.Stat(db.dbPath); err != nil {
 		_ = os.MkdirAll(db.dbPath, os.FileMode(0700))
 	}
 }
 
-func (db *Db) openDb() error {
+func (db *Database) openDb() error {
 	index, err := db.indexOpener.BleveIndex(db.dbPath,
 		db.indexMapping,
 		scorch.Name,
@@ -424,7 +428,7 @@ func (db *Db) openDb() error {
 	}
 
 	db.index = index
-	db.isDbOpen = true
+	db.isDbReady = true
 
 	return nil
 }

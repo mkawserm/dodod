@@ -29,7 +29,7 @@ func TestDb_OpenCloseWithPassword(t *testing.T) {
 	}
 
 	{
-		db := &Db{}
+		db := &Database{}
 		db.SetDbCredentials(credentials)
 		db.SetupDefaults()
 		err := db.Open()
@@ -44,7 +44,7 @@ func TestDb_OpenCloseWithPassword(t *testing.T) {
 	}
 
 	{
-		db := &Db{}
+		db := &Database{}
 		db.SetDbCredentials(credentials)
 		db.SetupDefaults()
 		err := db.Open()
@@ -72,7 +72,7 @@ func TestDb_OpenCloseWithoutPassword(t *testing.T) {
 	}
 
 	{
-		db := &Db{}
+		db := &Database{}
 		db.SetupDefaults()
 		db.SetDbCredentials(credentials)
 		err := db.Open()
@@ -87,7 +87,7 @@ func TestDb_OpenCloseWithoutPassword(t *testing.T) {
 	}
 
 	{
-		db := &Db{}
+		db := &Database{}
 		db.SetDbCredentials(credentials)
 		db.SetupDefaults()
 		err := db.Open()
@@ -115,7 +115,7 @@ func TestDb_Setup(t *testing.T) {
 	}
 
 	t.Run("Call Setup", func(t *testing.T) {
-		db := &Db{}
+		db := &Database{}
 		defer cleanupDb(t, dbPath)
 		db.Setup(credentials,
 			pasap.NewArgon2idHasher(),
@@ -134,7 +134,7 @@ func TestDb_Setup(t *testing.T) {
 	})
 
 	t.Run("Call Individual set", func(t *testing.T) {
-		db := &Db{}
+		db := &Database{}
 		defer cleanupDb(t, dbPath)
 		db.SetDbCredentials(credentials)
 		db.SetPasswordHasher(pasap.NewArgon2idHasher())
@@ -200,7 +200,7 @@ func TestMockOpenFailure(t *testing.T) {
 	}
 
 	t.Run("Open index failure", func(t *testing.T) {
-		db := &Db{}
+		db := &Database{}
 		defer cleanupDb(t, dbPath)
 		db.SetupDefaults()
 		db.SetDbCredentials(credentials)
@@ -215,7 +215,7 @@ func TestMockOpenFailure(t *testing.T) {
 	})
 
 	t.Run("Credentials path failure", func(t *testing.T) {
-		db := &Db{}
+		db := &Database{}
 		db.SetupDefaults()
 		db.SetDbCredentials(&mockCredentialsInvalidPath{})
 		err := db.Open()
@@ -228,7 +228,7 @@ func TestMockOpenFailure(t *testing.T) {
 	})
 
 	t.Run("Credentials password failure", func(t *testing.T) {
-		db := &Db{}
+		db := &Database{}
 		db.SetupDefaults()
 		db.SetDbCredentials(&mockCredentialsInvalidPassword{})
 		err := db.Open()
