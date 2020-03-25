@@ -606,6 +606,18 @@ func (db *Database) openDb() error {
 }
 
 func (db *Database) ChangePassword(newPassword string) error {
+	if path, err := db.dbCredentials.ReadPath(); err != nil {
+		return err
+	} else {
+		db.dbPath = path
+	}
+
+	if password, err := db.dbCredentials.ReadPassword(); err != nil {
+		return err
+	} else {
+		db.dbPassword = password
+	}
+
 	if ok, err := db.readConfig(); !ok {
 		return err
 	}
