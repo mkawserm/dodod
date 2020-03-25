@@ -10,9 +10,14 @@ import (
 	"github.com/dgraph-io/badger/v2/options"
 	"github.com/mkawserm/bdodb"
 	"github.com/mkawserm/pasap"
+	"io"
 	"io/ioutil"
 	"os"
+	"time"
 )
+
+var ErrDatabasePasswordChangeFailed = errors.New("dodod: database password change failed")
+var ErrIndexStorePasswordChangeFailed = errors.New("dodod: index store password change failed")
 
 var ErrDatabaseTransactionFailed = errors.New("dodod: database transaction failed")
 var ErrIndexingTransactionFailed = errors.New("dodod: indexing transaction failed")
@@ -68,11 +73,16 @@ type Database struct {
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]Document
 
-	internalIndex bleve.Index
-	internalDb    *badger.DB
+	internalIndex      bleve.Index
+	internalDb         *badger.DB
+	internalIndexStore string
 }
 
 func (db *Database) initAll() {
+	if db.internalIndexStore == "" {
+		db.internalIndexStore = "badger"
+	}
+
 	if db.fieldsRegistryCache == nil {
 		db.fieldsRegistryCache = make(map[string]string)
 	}
@@ -593,4 +603,91 @@ func (db *Database) openDb() error {
 	db.isDbReady = true
 
 	return nil
+}
+
+func (db *Database) ChangePassword(newPassword string) error {
+	if ok, err := db.readConfig(); !ok {
+		return err
+	}
+
+	if ok, err := db.isPasswordValid(); !ok {
+		return err
+	}
+
+	oldKey := db.secretKey
+
+	if err := copyFile(db.dbPath+"/dodod.json", db.dbPath+"/database.dodod.json.backup"); err != nil {
+		return err
+	}
+
+	if db.internalIndexStore == "badger" {
+		if err := copyFile(db.dbPath+"/dodod.json", db.dbPath+"/indexstore.dodod.json.backup"); err != nil {
+			return err
+		}
+	}
+
+	db.dbPassword = newPassword
+	if ok, err := db.writeConfig(); !ok {
+		return err
+	}
+	newKey := db.secretKey
+
+	opt := badger.KeyRegistryOptions{
+		Dir:                           db.dbPath + "/database",
+		ReadOnly:                      true,
+		EncryptionKey:                 oldKey,
+		EncryptionKeyRotationDuration: 10 * 24 * time.Hour,
+	}
+
+	kr, err := badger.OpenKeyRegistry(opt)
+	if err != nil {
+		return err
+	}
+	opt.EncryptionKey = newKey
+	err = badger.WriteKeyRegistry(kr, opt)
+	if err != nil {
+		return ErrDatabasePasswordChangeFailed
+	}
+
+	if db.internalIndexStore == "badger" {
+		// index store
+		opt1 := badger.KeyRegistryOptions{
+			Dir:                           db.dbPath + "/store",
+			ReadOnly:                      true,
+			EncryptionKey:                 oldKey,
+			EncryptionKeyRotationDuration: 10 * 24 * time.Hour,
+		}
+
+		kr1, err1 := badger.OpenKeyRegistry(opt)
+		if err1 != nil {
+			return err1
+		}
+		opt1.EncryptionKey = newKey
+		err = badger.WriteKeyRegistry(kr1, opt1)
+		if err != nil {
+			return ErrIndexStorePasswordChangeFailed
+		}
+	}
+
+	return nil
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return err
+	}
+	return out.Close()
 }
