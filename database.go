@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/index/scorch"
+	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"
@@ -74,14 +75,14 @@ type Database struct {
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]Document
 
-	internalIndex      bleve.Index
-	internalDb         *badger.DB
-	internalIndexStore string
+	internalIndex          bleve.Index
+	internalDb             *badger.DB
+	internalIndexStoreName string
 }
 
 func (db *Database) initAll() {
-	if db.internalIndexStore == "" {
-		db.internalIndexStore = "badger"
+	if db.internalIndexStoreName == "" {
+		db.internalIndexStoreName = "badger"
 	}
 
 	if db.fieldsRegistryCache == nil {
@@ -127,6 +128,10 @@ func (db *Database) SetVerifierCredentialsRW(verifierCredentialsRW pasap.Verifie
 
 func (db *Database) SetIndexOpener(opener IndexOpener) {
 	db.indexOpener = opener
+}
+
+func (db *Database) SetIndexStoreName(indexStoreName string) {
+	db.internalIndexStoreName = indexStoreName
 }
 
 //func (db *Database) SetIndexMapping(indexMapping *mapping.IndexMappingImpl) {
@@ -484,6 +489,10 @@ func (db *Database) readConfig() (bool, error) {
 		db.encodedKey = val
 	}
 
+	if val, ok := jsonMap["indexStoreName"].(string); ok {
+		db.internalIndexStoreName = val
+	}
+
 	if val, ok := jsonMap["isPasswordProtected"].(bool); ok {
 		db.isPasswordProtected = val
 	}
@@ -547,6 +556,7 @@ func (db *Database) writeConfig() (bool, error) {
 	jsonMap := make(map[string]interface{})
 	jsonMap["encodedKey"] = db.encodedKey
 	jsonMap["isPasswordProtected"] = db.isPasswordProtected
+	jsonMap["indexStoreName"] = db.internalIndexStoreName
 
 	data, err := json.Marshal(jsonMap)
 	if err != nil {
@@ -571,14 +581,28 @@ func (db *Database) ensurePath() {
 }
 
 func (db *Database) openDb() error {
-	index, err := db.indexOpener.BleveIndex(db.dbPath,
-		db.indexMapping,
-		scorch.Name,
-		map[string]interface{}{
-			"BdodbConfig": &bdodb.Config{
-				EncryptionKey: db.secretKey,
-			},
-		})
+	var index bleve.Index
+	var err error
+
+	if db.internalIndexStoreName == "badger" {
+		index, err = db.indexOpener.BleveIndex(db.dbPath,
+			db.indexMapping,
+			upsidedown.Name,
+			map[string]interface{}{
+				"BdodbConfig": &bdodb.Config{
+					EncryptionKey: db.secretKey,
+				},
+			})
+	} else {
+		index, err = db.indexOpener.BleveIndex(db.dbPath,
+			db.indexMapping,
+			scorch.Name,
+			map[string]interface{}{
+				"BdodbConfig": &bdodb.Config{
+					EncryptionKey: db.secretKey,
+				},
+			})
+	}
 
 	if err != nil {
 		return err
@@ -637,7 +661,7 @@ func (db *Database) ChangePassword(newPassword string) error {
 		return err
 	}
 
-	if db.internalIndexStore == "badger" {
+	if db.internalIndexStoreName == "badger" {
 		if err := copyFile(db.dbPath+"/dodod.json", db.dbPath+"/indexstore.dodod.json.backup"); err != nil {
 			return err
 		}
@@ -666,7 +690,7 @@ func (db *Database) ChangePassword(newPassword string) error {
 		return ErrDatabasePasswordChangeFailed
 	}
 
-	if db.internalIndexStore == "badger" {
+	if db.internalIndexStoreName == "badger" {
 		// index store
 		opt1 := badger.KeyRegistryOptions{
 			Dir:                           db.dbPath + "/store",
