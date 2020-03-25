@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+var ErrNilPointer = errors.New("dodod: nil pointer")
 var ErrDatabasePasswordChangeFailed = errors.New("dodod: database password change failed")
 var ErrIndexStorePasswordChangeFailed = errors.New("dodod: index store password change failed")
 
@@ -606,6 +607,10 @@ func (db *Database) openDb() error {
 }
 
 func (db *Database) ChangePassword(newPassword string) error {
+	if db.dbCredentials == nil {
+		return ErrNilPointer
+	}
+
 	if path, err := db.dbCredentials.ReadPath(); err != nil {
 		return err
 	} else {
