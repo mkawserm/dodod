@@ -2,7 +2,6 @@ package dodod
 
 import (
 	"errors"
-	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/mkawserm/pasap"
@@ -34,36 +33,32 @@ func TestDb_OpenCloseWithPassword(t *testing.T) {
 		Path:     dbPath,
 	}
 
-	{
-		db := &Database{}
-		db.SetDbPassword(credentials.Password)
-		db.SetDbPath(credentials.Path)
-		db.SetupDefaults()
-		err := db.Open()
+	db := &Database{}
+	db.SetDbPassword(credentials.Password)
+	db.SetDbPath(credentials.Path)
+	db.SetupDefaults()
+	err := db.Open()
 
-		if err != nil {
-			t.Errorf("error occured while opening, error: %v", err)
-		}
-
-		if err := db.Close(); err != nil {
-			t.Errorf("error occured while closing, error: %v", err)
-		}
+	if err != nil {
+		t.Errorf("error occured while opening, error: %v", err)
 	}
 
-	{
-		db := &Database{}
-		db.SetDbPassword(credentials.Password)
-		db.SetDbPath(credentials.Path)
-		db.SetupDefaults()
-		err := db.Open()
+	if err := db.Close(); err != nil {
+		t.Errorf("error occured while closing, error: %v", err)
+	}
 
-		if err != nil {
-			t.Errorf("error occured while opening, error: %v", err)
-		}
+	db = &Database{}
+	db.SetDbPassword(credentials.Password)
+	db.SetDbPath(credentials.Path)
+	db.SetupDefaults()
+	err = db.Open()
 
-		if err := db.Close(); err != nil {
-			t.Errorf("error occured while closing, error: %v", err)
-		}
+	if err != nil {
+		t.Errorf("error occured while opening, error: %v", err)
+	}
+
+	if err := db.Close(); err != nil {
+		t.Errorf("error occured while closing, error: %v", err)
 	}
 
 	cleanupDb(t, dbPath)
@@ -409,7 +404,7 @@ func TestDatabase_IsDatabaseReady(t *testing.T) {
 	t.Helper()
 
 	dbPath := "/tmp/dodod"
-	dbPassword := "password"
+	dbPassword := ""
 	defer cleanupDb(t, dbPath)
 
 	db := &Database{}
@@ -437,7 +432,7 @@ func TestDatabase_Create(t *testing.T) {
 	t.Helper()
 
 	dbPath := "/tmp/dodod"
-	dbPassword := "password"
+	dbPassword := ""
 	defer cleanupDb(t, dbPath)
 
 	db := &Database{}
@@ -492,7 +487,7 @@ func TestDatabase_CRUD(t *testing.T) {
 	t.Helper()
 
 	dbPath := "/tmp/dodod"
-	dbPassword := "password"
+	dbPassword := ""
 
 	defer cleanupDb(t, dbPath)
 
@@ -644,11 +639,145 @@ func TestDatabase_CRUD(t *testing.T) {
 	}
 }
 
+func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := ""
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	if err := db.RegisterDocument(&MyTestDocument{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if db.IsDatabaseReady() {
+		t.Fatalf("database should not be ready")
+	}
+
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	if err := db.AddDocument([]interface{}{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.UpdateDocument([]interface{}{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.DeleteDocument([]interface{}{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// open
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !db.IsDatabaseReady() {
+		t.Fatalf("database should be ready")
+	}
+
+	if err := db.AddDocument([]interface{}{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data := []interface{}{&MyTestDocument{Id: "1"}}
+
+	if n, err := db.Read(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if n != 1 {
+			t.Fatalf("read failure")
+		}
+	}
+
+	if err := db.UpdateDocument([]interface{}{&MyTestDocument{
+		Id:   "1",
+		Name: "UpdatedTest1",
+	}}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if n, err := db.Read(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if n != 1 {
+			t.Fatalf("read failure")
+		}
+
+		if val, ok := data[0].(*MyTestDocument); !ok {
+			t.Fatalf("document conversion failed")
+		} else {
+			if val.Name != "UpdatedTest1" {
+				t.Fatalf("document update failed")
+			}
+		}
+	}
+
+	if err := db.DeleteDocument(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if n, err := db.Read(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if n != 0 {
+			t.Fatalf("delete failure")
+		}
+	}
+
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
+}
+
+func TestDatabase_CreateIndex(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := ""
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data := []interface{}{&MyTestDocument{Id: "1"}}
+
+	if err := db.CreateIndex(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestDatabase_UpdateIndex(t *testing.T) {
 	t.Helper()
 
 	dbPath := "/tmp/dodod"
-	dbPassword := "password"
+	dbPassword := ""
 
 	defer cleanupDb(t, dbPath)
 
@@ -673,7 +802,7 @@ func TestDatabase_DeleteIndex(t *testing.T) {
 	t.Helper()
 
 	dbPath := "/tmp/dodod"
-	dbPassword := "password"
+	dbPassword := ""
 
 	defer cleanupDb(t, dbPath)
 
@@ -712,7 +841,7 @@ func TestDatabase_Search(t *testing.T) {
 	t.Helper()
 
 	dbPath := "/tmp/dodod"
-	dbPassword := "password"
+	dbPassword := ""
 
 	defer cleanupDb(t, dbPath)
 
@@ -901,7 +1030,7 @@ func TestDatabase_ComplexSearch(t *testing.T) {
 	t.Helper()
 
 	dbPath := "/tmp/dodod"
-	dbPassword := "password"
+	dbPassword := ""
 
 	defer cleanupDb(t, dbPath)
 
@@ -1049,7 +1178,7 @@ func TestDatabase_EncodeDecodeDocument(t *testing.T) {
 	t.Helper()
 
 	dbPath := "/tmp/dodod"
-	dbPassword := "password"
+	dbPassword := ""
 
 	defer cleanupDb(t, dbPath)
 
@@ -1077,10 +1206,10 @@ func TestDatabase_EncodeDecodeDocument(t *testing.T) {
 	if d, err := db.EncodeDocument(m); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
-		if n, err := db.DecodeDocument(d); err != nil {
+		if _, err := db.DecodeDocument(d); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		} else {
-			fmt.Println(n.(*CustomDocument))
+			//fmt.Println(n.(*CustomDocument))
 		}
 	}
 
