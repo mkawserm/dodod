@@ -395,6 +395,46 @@ func (db *Database) Create(data []interface{}) error {
 	return nil
 }
 
+func (db *Database) AddDocument(data []interface{}) error {
+	if !db.IsDatabaseReady() {
+		return ErrDatabaseIsNotOpen
+	}
+
+	var err1 error
+
+	internalBatchTxn := db.internalDb.NewTransaction(true)
+	defer internalBatchTxn.Discard()
+
+	for _, d := range data {
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		if jsonData, err := db.EncodeDocument(d); err == nil {
+			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+
+	}
+
+	err1 = internalBatchTxn.Commit()
+	if err1 != nil {
+		return ErrDatabaseTransactionFailed
+	}
+
+	return nil
+}
+
 func (db *Database) Update(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
@@ -450,6 +490,49 @@ func (db *Database) Update(data []interface{}) error {
 	return nil
 }
 
+func (db *Database) UpdateDocument(data []interface{}) error {
+	if !db.IsDatabaseReady() {
+		return ErrDatabaseIsNotOpen
+	}
+
+	var err1 error
+
+	internalBatchTxn := db.internalDb.NewTransaction(true)
+	defer internalBatchTxn.Discard()
+
+	for _, d := range data {
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		if err := internalBatchTxn.Delete([]byte(id)); err != nil {
+			return err
+		}
+
+		if jsonData, err := db.EncodeDocument(d); err == nil {
+			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	err1 = internalBatchTxn.Commit()
+	if err1 != nil {
+		return ErrDatabaseTransactionFailed
+	}
+
+	return nil
+}
+
 func (db *Database) Delete(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
@@ -489,6 +572,41 @@ func (db *Database) Delete(data []interface{}) error {
 	err2 = db.internalIndex.Batch(batch)
 	if err2 != nil {
 		return ErrIndexStoreTransactionFailed
+	}
+
+	return nil
+}
+
+func (db *Database) DeleteDocument(data []interface{}) error {
+	if !db.IsDatabaseReady() {
+		return ErrDatabaseIsNotOpen
+	}
+
+	var err1 error
+
+	internalBatchTxn := db.internalDb.NewTransaction(true)
+	defer internalBatchTxn.Discard()
+
+	for _, d := range data {
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		if err := internalBatchTxn.Delete([]byte(id)); err != nil {
+			return err
+		}
+	}
+
+	err1 = internalBatchTxn.Commit()
+	if err1 != nil {
+		return ErrDatabaseTransactionFailed
 	}
 
 	return nil
@@ -596,7 +714,7 @@ func (db *Database) ReadUsingIdWithError(data []string) (uint64, []interface{}, 
 	return readCount, output, nil
 }
 
-func (db *Database) UpdateIndex(data []interface{}) error {
+func (db *Database) CreateIndex(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
@@ -613,6 +731,31 @@ func (db *Database) UpdateIndex(data []interface{}) error {
 			return ErrIdCanNotBeEmpty
 		}
 
+		if err := batch.Index(id, d); err != nil {
+			return err
+		}
+	}
+
+	return db.internalIndex.Batch(batch)
+}
+
+func (db *Database) UpdateIndex(data []interface{}) error {
+	if !db.IsDatabaseReady() {
+		return ErrDatabaseIsNotOpen
+	}
+
+	batch := db.internalIndex.NewBatch()
+	for _, d := range data {
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+		batch.Delete(id)
 		if err := batch.Index(id, d); err != nil {
 			return err
 		}
