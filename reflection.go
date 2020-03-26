@@ -19,7 +19,7 @@ var ErrUnknownBaseType = errors.New(`dodod: unknown base type`)
 var ErrNonBooleanValueForBooleanField = errors.New(`dodod: non-boolean value for boolean field`)
 var ErrUnknownMappingField = errors.New(`dodod: tried to set mapping field of unknown type`)
 
-func ExtractFields(document Document) map[string]string {
+func ExtractFields(document interface{}) map[string]string {
 	data := make(map[string]string)
 	extractFields(reflect.TypeOf(document), data)
 	return data

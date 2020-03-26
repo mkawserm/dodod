@@ -1,10 +1,15 @@
 package dodod
 
 type Mutation interface {
-	Create(data []Document) error
-	Update(data []Document) error
-	Delete(data []Document) error
+	Create(data []interface{}) error
+	Update(data []interface{}) error
+	Delete(data []interface{}) error
 
-	UpdateIndex(data []Document) error
-	DeleteIndex(data []Document) error
+	CreateIndex(data []interface{}) error
+	UpdateIndex(data []interface{}) error
+	DeleteIndex(data []interface{}) error
+
+	AddDocument(data []interface{}) error
+	UpdateDocument(data []interface{}) error
+	DeleteDocument(data []interface{}) error
 }

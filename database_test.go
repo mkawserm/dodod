@@ -2,6 +2,7 @@ package dodod
 
 import (
 	"errors"
+	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/mkawserm/pasap"
@@ -452,7 +453,7 @@ func TestDatabase_Create(t *testing.T) {
 	db.SetDbPassword(dbPassword)
 	db.SetDbPath(dbPath)
 
-	if err := db.Create([]Document{&MyTestDocument{
+	if err := db.Create([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != ErrDatabaseIsNotOpen {
@@ -468,7 +469,7 @@ func TestDatabase_Create(t *testing.T) {
 		t.Fatalf("database should be ready")
 	}
 
-	if err := db.Create([]Document{&MyTestDocument{
+	if err := db.Create([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != nil {
@@ -508,28 +509,28 @@ func TestDatabase_CRUD(t *testing.T) {
 	db.SetDbPassword(dbPassword)
 	db.SetDbPath(dbPath)
 
-	if err := db.Create([]Document{&MyTestDocument{
+	if err := db.Create([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != ErrDatabaseIsNotOpen {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if _, err := db.Read([]Document{&MyTestDocument{
+	if _, err := db.Read([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != ErrDatabaseIsNotOpen {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := db.Update([]Document{&MyTestDocument{
+	if err := db.Update([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != ErrDatabaseIsNotOpen {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := db.Delete([]Document{&MyTestDocument{
+	if err := db.Delete([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != ErrDatabaseIsNotOpen {
@@ -546,14 +547,14 @@ func TestDatabase_CRUD(t *testing.T) {
 		t.Fatalf("database should be ready")
 	}
 
-	if err := db.Create([]Document{&MyTestDocument{
+	if err := db.Create([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	data := []Document{&MyTestDocument{Id: "1"}}
+	data := []interface{}{&MyTestDocument{Id: "1"}}
 
 	if n, err := db.Read(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -563,7 +564,7 @@ func TestDatabase_CRUD(t *testing.T) {
 		}
 	}
 
-	if err := db.Update([]Document{&MyTestDocument{
+	if err := db.Update([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "UpdatedTest1",
 	}}); err != nil {
@@ -621,7 +622,7 @@ func TestDatabase_UpdateIndex(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	data := []Document{&MyTestDocument{Id: "1"}}
+	data := []interface{}{&MyTestDocument{Id: "1"}}
 
 	if err := db.UpdateIndex(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -646,9 +647,179 @@ func TestDatabase_DeleteIndex(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	data := []Document{&MyTestDocument{Id: "1"}}
+	data := []interface{}{&MyTestDocument{Id: "1"}}
 
 	if err := db.DeleteIndex(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+type CustomDocument struct {
+	Id           string `json:"id"`
+	CustomField1 string `json:"custom_field_1"`
+	CustomField2 string `json:"custom_field_2"`
+}
+
+func (c *CustomDocument) GetId() string {
+	return c.Id
+}
+
+func (c *CustomDocument) Type() string {
+	return "CustomDocument"
+}
+
+func TestDatabase_Search(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+
+	if err := db.RegisterDocument(&CustomDocument{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	addData := []interface{}{&CustomDocument{
+		Id:           "1",
+		CustomField1: "1 value field 1",
+		CustomField2: "1 value field 2",
+	},
+		&CustomDocument{
+			Id:           "2",
+			CustomField1: "2 value field 1",
+			CustomField2: "2 value field 2",
+		},
+		&CustomDocument{
+			Id:           "3",
+			CustomField1: "3 value field 1",
+			CustomField2: "3 value field 2",
+		},
+		&CustomDocument{
+			Id:           "4",
+			CustomField1: "4 value field 1",
+			CustomField2: "4 value field 2",
+		},
+		&CustomDocument{
+			Id:           "5",
+			CustomField1: "5 value field 1",
+			CustomField2: "5 value field 2",
+		},
+		&CustomDocument{
+			Id:           "6",
+			CustomField1: "6 value field 1",
+			CustomField2: "6 value field 2",
+		},
+		&CustomDocument{
+			Id:           "7",
+			CustomField1: "7 value field 1",
+			CustomField2: "7 value field 2",
+		},
+		&CustomDocument{
+			Id:           "8",
+			CustomField1: "8 value field 1",
+			CustomField2: "8 value field 2",
+		},
+		&CustomDocument{
+			Id:           "9",
+			CustomField1: "9 value field 1",
+			CustomField2: "9 value field 2",
+		},
+		&CustomDocument{
+			Id:           "10",
+			CustomField1: "10 value field 1",
+			CustomField2: "10 value field 2",
+		},
+		&CustomDocument{
+			Id:           "11",
+			CustomField1: "11 value field 1",
+			CustomField2: "11 value field 2",
+		},
+		&CustomDocument{
+			Id:           "12",
+			CustomField1: "12 value field 1",
+			CustomField2: "12 value field 2",
+		},
+		&CustomDocument{
+			Id:           "13",
+			CustomField1: "13 value field 1",
+			CustomField2: "13 value field 2",
+		},
+		&CustomDocument{
+			Id:           "14",
+			CustomField1: "14 value field 1",
+			CustomField2: "14 value field 2",
+		},
+	}
+
+	if err := db.Create(addData); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	db.SetSearchResultLimit(5)
+
+	// Now search data
+
+	total, queryTime, result, err := db.Search("value", 0)
+
+	fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result, "| Err:", err)
+
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
+}
+
+func TestDatabase_EncodeDecodeDocument(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+
+	if err := db.RegisterDocument(&CustomDocument{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	m := &CustomDocument{
+		Id:           "1",
+		CustomField1: "field 1",
+		CustomField2: "field 2",
+	}
+
+	if d, err := db.EncodeDocument(m); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if n, err := db.DecodeDocument(d); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			fmt.Println(n.(*CustomDocument))
+		}
+	}
+
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
 	}
 }

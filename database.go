@@ -1,9 +1,12 @@
 package dodod
 
 import (
+	"bytes"
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/index/upsidedown"
@@ -15,11 +18,16 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"time"
 )
 
 var ErrEmptyPath = errors.New("dodod: empty path")
 var ErrEmptyPassword = errors.New("dodod: empty password")
+var ErrInvalidData = errors.New("dodod: invalid data")
+var ErrInvalidDocument = errors.New("dodod: invalid document")
+
+var ErrDododTypeFieldDoesNotExists = errors.New("dodod: <type> field does not exists")
 
 //var ErrNilPointer = errors.New("dodod: nil pointer")
 var ErrDatabasePasswordChangeFailed = errors.New("dodod: database password change failed")
@@ -34,6 +42,7 @@ var ErrDatabaseIsNotOpen = errors.New("dodod: database is not open")
 // ErrFieldTypeMismatch will occur if the field already registered as different type
 var ErrFieldTypeMismatch = errors.New("dodod: field type mismatch")
 var ErrDocumentTypeAlreadyRegistered = errors.New("dodod: document type already registered")
+var ErrDocumentTypeIsNotRegistered = errors.New("dodod: document type is not registered")
 
 type BleveIndexOpener struct {
 }
@@ -65,12 +74,15 @@ type Database struct {
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]Document
 
-	internalIndex          bleve.Index
-	internalDb             *badger.DB
-	internalIndexStoreName string
+	internalSearchResultLimit int
+	internalIndex             bleve.Index
+	internalDb                *badger.DB
+	internalIndexStoreName    string
 }
 
 func (db *Database) initAll() {
+	db.internalSearchResultLimit = 20
+
 	if db.internalIndexStoreName == "" {
 		db.internalIndexStoreName = "badger"
 	}
@@ -104,6 +116,10 @@ func (db *Database) Setup(passwordHasher pasap.PasswordHasher,
 
 	db.initAll()
 	db.initIndexMapping()
+}
+
+func (db *Database) SetSearchResultLimit(n int) {
+	db.internalSearchResultLimit = n
 }
 
 func (db *Database) SetPasswordHasher(passwordHasher pasap.PasswordHasher) {
@@ -201,9 +217,16 @@ func (db *Database) initIndexMapping() {
 	}
 }
 
-func (db *Database) RegisterDocument(document Document) error {
+func (db *Database) RegisterDocument(d interface{}) error {
 	db.initAll()
 	db.initIndexMapping()
+	var document Document
+
+	if n, ok := d.(Document); !ok {
+		return ErrInvalidDocument
+	} else {
+		document = n
+	}
 
 	if _, exists := db.documentRegistryCache[document.Type()]; exists {
 		return ErrDocumentTypeAlreadyRegistered
@@ -252,7 +275,74 @@ func (db *Database) IsDatabaseReady() bool {
 	return db.isDbReady
 }
 
-func (db *Database) Create(data []Document) error {
+func (db *Database) EncodeDocument(document interface{}) ([]byte, error) {
+	var err error
+	var jsonData []byte
+
+	var data Document
+	if n, ok := document.(Document); !ok {
+		return nil, ErrInvalidDocument
+	} else {
+		data = n
+	}
+
+	documentType := []byte(data.Type())
+	jsonData, err = json.Marshal(data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	typeLength := uint32(len(documentType))
+	dataLength := uint32(len(jsonData))
+
+	typeLengthBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(typeLengthBytes, typeLength)
+
+	dataLengthBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(dataLengthBytes, dataLength)
+
+	var output bytes.Buffer
+
+	output.Write(typeLengthBytes)
+	output.Write(documentType)
+	output.Write(dataLengthBytes)
+	output.Write(jsonData)
+
+	return output.Bytes(), nil
+}
+
+func (db *Database) DecodeDocument(data []byte) (interface{}, error) {
+	//var err error
+	var doc interface{}
+
+	if len(data) < 8 {
+		return nil, ErrInvalidData
+	}
+
+	var documentTypeLength uint32
+	//var jsonDataLength uint32
+
+	documentTypeLength = binary.BigEndian.Uint32(data[0:4])
+	//jsonDataLength = binary.BigEndian.Uint32(data[4+documentTypeLength:4+documentTypeLength+4])
+	documentType := string(data[4 : 4+documentTypeLength])
+	if v, exists := db.documentRegistryCache[documentType]; !exists {
+		return nil, ErrDocumentTypeIsNotRegistered
+	} else {
+		indirect := reflect.Indirect(reflect.ValueOf(v))
+		newIndirect := reflect.New(indirect.Type())
+		doc = newIndirect.Interface()
+	}
+
+	jsonData := data[4+documentTypeLength+4:]
+	if err := json.Unmarshal(jsonData, &doc); err != nil {
+		return nil, err
+	}
+
+	return doc, nil
+}
+
+func (db *Database) Create(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
@@ -265,7 +355,13 @@ func (db *Database) Create(data []Document) error {
 
 	batch := db.internalIndex.NewBatch()
 	for _, d := range data {
-		id := d.GetId()
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+
 		if id == "" {
 			return ErrIdCanNotBeEmpty
 		}
@@ -296,7 +392,7 @@ func (db *Database) Create(data []Document) error {
 	return nil
 }
 
-func (db *Database) Update(data []Document) error {
+func (db *Database) Update(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
@@ -309,7 +405,13 @@ func (db *Database) Update(data []Document) error {
 
 	batch := db.internalIndex.NewBatch()
 	for _, d := range data {
-		id := d.GetId()
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+
 		if id == "" {
 			return ErrIdCanNotBeEmpty
 		}
@@ -345,7 +447,7 @@ func (db *Database) Update(data []Document) error {
 	return nil
 }
 
-func (db *Database) Delete(data []Document) error {
+func (db *Database) Delete(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
@@ -358,7 +460,13 @@ func (db *Database) Delete(data []Document) error {
 
 	batch := db.internalIndex.NewBatch()
 	for _, d := range data {
-		id := d.GetId()
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+
 		if id == "" {
 			return ErrIdCanNotBeEmpty
 		}
@@ -383,7 +491,7 @@ func (db *Database) Delete(data []Document) error {
 	return nil
 }
 
-func (db *Database) Read(data []Document) (uint64, error) {
+func (db *Database) Read(data []interface{}) (uint64, error) {
 	if !db.IsDatabaseReady() {
 		return 0, ErrDatabaseIsNotOpen
 	}
@@ -393,7 +501,11 @@ func (db *Database) Read(data []Document) (uint64, error) {
 
 	var readCount uint64 = 0
 	for _, d := range data {
-		id := d.GetId()
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		}
+
 		if id == "" {
 			continue
 		}
@@ -420,14 +532,19 @@ func (db *Database) Read(data []Document) (uint64, error) {
 	return readCount, nil
 }
 
-func (db *Database) UpdateIndex(data []Document) error {
+func (db *Database) UpdateIndex(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
 
 	batch := db.internalIndex.NewBatch()
 	for _, d := range data {
-		id := d.GetId()
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
 		if id == "" {
 			return ErrIdCanNotBeEmpty
 		}
@@ -440,14 +557,19 @@ func (db *Database) UpdateIndex(data []Document) error {
 	return db.internalIndex.Batch(batch)
 }
 
-func (db *Database) DeleteIndex(data []Document) error {
+func (db *Database) DeleteIndex(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
 
 	batch := db.internalIndex.NewBatch()
 	for _, d := range data {
-		id := d.GetId()
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
 		if id == "" {
 			return ErrIdCanNotBeEmpty
 		}
@@ -455,6 +577,38 @@ func (db *Database) DeleteIndex(data []Document) error {
 	}
 
 	return db.internalIndex.Batch(batch)
+}
+
+func (db *Database) Search(query string, offset int) (total uint64, queryTime time.Duration, result []Document, err error) {
+	q := bleve.NewQueryStringQuery(query)
+	searchRequest := bleve.NewSearchRequest(q)
+	searchRequest.From = offset
+	searchRequest.Size = db.internalSearchResultLimit
+	searchRequest.Fields = db.GetRegisteredFields()
+
+	var searchResult *bleve.SearchResult
+	searchResult, err = db.internalIndex.Search(searchRequest)
+	if err != nil {
+		return
+	}
+
+	result = make([]Document, 0, len(searchResult.Hits))
+	queryTime = searchResult.Took
+	total = searchResult.Total
+
+	fmt.Println(searchResult.Hits)
+
+	for _, v := range searchResult.Hits {
+
+		for _, field := range v.Fields {
+			fmt.Println(field)
+		}
+		//doc, _ := db.internalIndex.Document(v.ID)
+		//dc := doc.(mapping.Classifier)
+		//fmt.Println(doc.)
+	}
+
+	return total, queryTime, result, err
 }
 
 func (db *Database) BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error) {
