@@ -6,7 +6,7 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/mkawserm/pasap"
 	"os"
-	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -388,8 +388,19 @@ func TestDatabase_RegisterDocument(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if !reflect.DeepEqual(db.GetRegisteredFields(), []string{"id", "name"}) {
+	data := db.GetRegisteredFields()
+	sort.Strings(data)
+	n := len(data)
+
+	if n != 2 {
 		t.Fatalf("Registered fields are not equal")
+	}
+
+	if sort.SearchStrings(data, "id") > n {
+		t.Fatalf("id field not found")
+	}
+	if sort.SearchStrings(data, "name") > n {
+		t.Fatalf("name field not found")
 	}
 }
 
@@ -589,5 +600,55 @@ func TestDatabase_CRUD(t *testing.T) {
 
 	if err := db.Close(); err != nil {
 		t.Fatalf("error occured while closing, error: %v", err)
+	}
+}
+
+func TestDatabase_UpdateIndex(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data := []Document{&MyTestDocument{Id: "1"}}
+
+	if err := db.UpdateIndex(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestDatabase_DeleteIndex(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data := []Document{&MyTestDocument{Id: "1"}}
+
+	if err := db.DeleteIndex(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
