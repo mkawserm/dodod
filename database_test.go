@@ -392,3 +392,31 @@ func TestDatabase_RegisterDocument(t *testing.T) {
 		t.Fatalf("Registered fields are not equal")
 	}
 }
+
+func TestDatabase_IsDatabaseReady(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	if db.IsDatabaseReady() {
+		t.Fatalf("database should not be ready")
+	}
+
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !db.IsDatabaseReady() {
+		t.Fatalf("database should be ready")
+	}
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
+}
