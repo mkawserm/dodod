@@ -408,7 +408,11 @@ func (db *Database) Read(data []Document) (uint64, error) {
 				return readCount, err
 			}
 		} else {
-			return readCount, err
+			if err == badger.ErrKeyNotFound {
+				continue
+			} else {
+				return readCount, err
+			}
 		}
 	}
 

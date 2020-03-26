@@ -420,3 +420,174 @@ func TestDatabase_IsDatabaseReady(t *testing.T) {
 		t.Fatalf("error occured while closing, error: %v", err)
 	}
 }
+
+func TestDatabase_Create(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	if err := db.RegisterDocument(&MyTestDocument{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if db.IsDatabaseReady() {
+		t.Fatalf("database should not be ready")
+	}
+
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	if err := db.Create([]Document{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !db.IsDatabaseReady() {
+		t.Fatalf("database should be ready")
+	}
+
+	if err := db.Create([]Document{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	//if err := db.Create([]Document{&MyTestDocument{
+	//	Id:   "1",
+	//	Name: "Test1",
+	//}}); err !=ErrDatabaseTransactionFailed {
+	//	t.Fatalf("unexpected error: %v", err)
+	//}
+
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
+}
+
+func TestDatabase_CRUD(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	if err := db.RegisterDocument(&MyTestDocument{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if db.IsDatabaseReady() {
+		t.Fatalf("database should not be ready")
+	}
+
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	if err := db.Create([]Document{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if _, err := db.Read([]Document{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.Update([]Document{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.Delete([]Document{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// open
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !db.IsDatabaseReady() {
+		t.Fatalf("database should be ready")
+	}
+
+	if err := db.Create([]Document{&MyTestDocument{
+		Id:   "1",
+		Name: "Test1",
+	}}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data := []Document{&MyTestDocument{Id: "1"}}
+
+	if n, err := db.Read(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if n != 1 {
+			t.Fatalf("read failure")
+		}
+	}
+
+	if err := db.Update([]Document{&MyTestDocument{
+		Id:   "1",
+		Name: "UpdatedTest1",
+	}}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if n, err := db.Read(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if n != 1 {
+			t.Fatalf("read failure")
+		}
+
+		if val, ok := data[0].(*MyTestDocument); !ok {
+			t.Fatalf("document conversion failed")
+		} else {
+			if val.Name != "UpdatedTest1" {
+				t.Fatalf("document update failed")
+			}
+		}
+	}
+
+	if err := db.Delete(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if n, err := db.Read(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if n != 0 {
+			t.Fatalf("delete failure")
+		}
+	}
+
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
+}
