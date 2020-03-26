@@ -578,6 +578,7 @@ func (db *Database) openDb() error {
 			map[string]interface{}{
 				"BdodbConfig": &bdodb.Config{
 					EncryptionKey: db.secretKey,
+					Logger:        DefaultLogger,
 				},
 			})
 	} else {
@@ -603,6 +604,7 @@ func (db *Database) openDb() error {
 	opt.ValueLogLoadingMode = options.MemoryMap
 	opt.Compression = options.Snappy
 	opt.EncryptionKey = db.secretKey
+	opt.Logger = DefaultLogger
 
 	if badgerDb, err := badger.Open(opt); err != nil {
 		_ = index.Close()
@@ -666,6 +668,7 @@ func (db *Database) ChangePassword(newPassword string) error {
 	opt.EncryptionKey = newKey
 	err = badger.WriteKeyRegistry(kr, opt)
 	if err != nil {
+		DefaultLogger.Errorf("%v", err)
 		return ErrDatabasePasswordChangeFailed
 	}
 
@@ -685,6 +688,7 @@ func (db *Database) ChangePassword(newPassword string) error {
 		opt1.EncryptionKey = newKey
 		err = badger.WriteKeyRegistry(kr1, opt1)
 		if err != nil {
+			DefaultLogger.Errorf("%v", err)
 			return ErrIndexStorePasswordChangeFailed
 		}
 	}
