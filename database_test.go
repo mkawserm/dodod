@@ -820,6 +820,17 @@ func TestDatabase_Search(t *testing.T) {
 		if total != 14 {
 			t.Fatalf("total result should be 14 but got %v", total)
 		}
+		doc1 := result[0].(*CustomDocument)
+		doc2 := result[1].(*CustomDocument)
+		if doc1.Id == doc2.Id {
+			t.Fatalf("Document id should not be equal")
+		}
+		if doc1.CustomField1 == doc2.CustomField1 {
+			t.Fatalf("field should not be equal")
+		}
+		if doc1.CustomField2 == doc2.CustomField2 {
+			t.Fatalf("field should not be equal")
+		}
 		//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
 	}
 
@@ -831,6 +842,17 @@ func TestDatabase_Search(t *testing.T) {
 		}
 		if total != 14 {
 			t.Fatalf("total result should be 14 but got %v", total)
+		}
+		doc1 := result[0].(*CustomDocument)
+		doc2 := result[1].(*CustomDocument)
+		if doc1.Id == doc2.Id {
+			t.Fatalf("Document id should not be equal")
+		}
+		if doc1.CustomField1 == doc2.CustomField1 {
+			t.Fatalf("field should not be equal")
+		}
+		if doc1.CustomField2 == doc2.CustomField2 {
+			t.Fatalf("field should not be equal")
 		}
 		//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
 	}
@@ -844,6 +866,17 @@ func TestDatabase_Search(t *testing.T) {
 		if total != 14 {
 			t.Fatalf("total result should be 14 but got %v", total)
 		}
+		doc1 := result[0].(*CustomDocument)
+		doc2 := result[1].(*CustomDocument)
+		if doc1.Id == doc2.Id {
+			t.Fatalf("Document id should not be equal")
+		}
+		if doc1.CustomField1 == doc2.CustomField1 {
+			t.Fatalf("field should not be equal")
+		}
+		if doc1.CustomField2 == doc2.CustomField2 {
+			t.Fatalf("field should not be equal")
+		}
 		//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
 	}
 
@@ -851,7 +884,7 @@ func TestDatabase_Search(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if len(result) != 0 {
-			t.Fatalf("result should be 4 but got %v", len(result))
+			t.Fatalf("result should be 0 but got %v", len(result))
 		}
 		if total != 14 {
 			t.Fatalf("total result should be 14 but got %v", total)
@@ -979,6 +1012,18 @@ func TestDatabase_ComplexSearch(t *testing.T) {
 		}
 		if total != 14 {
 			t.Fatalf("total result should be 14 but got %v", total)
+		}
+
+		doc1 := result[0].(*CustomDocument)
+		doc2 := result[1].(*CustomDocument)
+		if doc1.Id == doc2.Id {
+			t.Fatalf("Document id should not be equal")
+		}
+		if doc1.CustomField1 == doc2.CustomField1 {
+			t.Fatalf("field should not be equal")
+		}
+		if doc1.CustomField2 == doc2.CustomField2 {
+			t.Fatalf("field should not be equal")
 		}
 		//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
 	}
