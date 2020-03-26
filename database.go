@@ -324,6 +324,10 @@ func (db *Database) DecodeDocument(data []byte) (interface{}, error) {
 	//var jsonDataLength uint32
 
 	documentTypeLength = binary.BigEndian.Uint32(data[0:4])
+	if len(data) < (8 + int(documentTypeLength)) {
+		return nil, ErrInvalidData
+	}
+
 	//jsonDataLength = binary.BigEndian.Uint32(data[4+documentTypeLength:4+documentTypeLength+4])
 	documentType := string(data[4 : 4+documentTypeLength])
 	if v, exists := db.documentRegistryCache[documentType]; !exists {
@@ -340,6 +344,28 @@ func (db *Database) DecodeDocument(data []byte) (interface{}, error) {
 	}
 
 	return doc, nil
+}
+
+func (db *Database) DecodeDocumentUsingInterface(data []byte, document interface{}) error {
+	if len(data) < 8 {
+		return ErrInvalidData
+	}
+
+	var documentTypeLength uint32
+	//var jsonDataLength uint32
+
+	documentTypeLength = binary.BigEndian.Uint32(data[0:4])
+
+	if len(data) < (8 + int(documentTypeLength)) {
+		return ErrInvalidData
+	}
+
+	jsonData := data[4+documentTypeLength+4:]
+	if err := json.Unmarshal(jsonData, document); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (db *Database) Create(data []interface{}) error {
@@ -366,7 +392,7 @@ func (db *Database) Create(data []interface{}) error {
 			return ErrIdCanNotBeEmpty
 		}
 
-		if jsonData, err := json.Marshal(d); err == nil {
+		if jsonData, err := db.EncodeDocument(d); err == nil {
 			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
 				return err
 			}
@@ -420,7 +446,7 @@ func (db *Database) Update(data []interface{}) error {
 			return err
 		}
 
-		if jsonData, err := json.Marshal(d); err == nil {
+		if jsonData, err := db.EncodeDocument(d); err == nil {
 			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
 				return err
 			}
@@ -512,7 +538,7 @@ func (db *Database) Read(data []interface{}) (uint64, error) {
 
 		if item, err := internalBatchTxn.Get([]byte(id)); err == nil {
 			if value, err := item.ValueCopy(nil); err == nil {
-				if err := json.Unmarshal(value, d); err == nil {
+				if err := db.DecodeDocumentUsingInterface(value, d); err == nil {
 					readCount = readCount + 1
 				} else {
 					return readCount, err
@@ -530,6 +556,67 @@ func (db *Database) Read(data []interface{}) (uint64, error) {
 	}
 
 	return readCount, nil
+}
+
+func (db *Database) ReadUsingId(data []string) (uint64, []interface{}, error) {
+	if !db.IsDatabaseReady() {
+		return 0, nil, ErrDatabaseIsNotOpen
+	}
+
+	internalBatchTxn := db.internalDb.NewTransaction(false)
+	defer internalBatchTxn.Discard()
+
+	output := make([]interface{}, len(data), len(data))
+	var readCount = 0
+	for _, id := range data {
+		if id == "" {
+			continue
+		}
+
+		if item, err := internalBatchTxn.Get([]byte(id)); err == nil {
+			if value, err := item.ValueCopy(nil); err == nil {
+				if doc, err := db.DecodeDocument(value); err == nil {
+					output[readCount] = doc
+					readCount = readCount + 1
+				}
+			}
+		}
+	}
+	return uint64(readCount), output[:readCount], nil
+}
+
+func (db *Database) ReadUsingIdWithError(data []string) (uint64, []interface{}, error) {
+	if !db.IsDatabaseReady() {
+		return 0, nil, ErrDatabaseIsNotOpen
+	}
+
+	internalBatchTxn := db.internalDb.NewTransaction(false)
+	defer internalBatchTxn.Discard()
+
+	output := make([]interface{}, len(data), len(data))
+	var readCount uint64 = 0
+	for i, id := range data {
+		if id == "" {
+			continue
+		}
+
+		if item, err := internalBatchTxn.Get([]byte(id)); err == nil {
+			if value, err := item.ValueCopy(nil); err == nil {
+				if doc, err := db.DecodeDocument(value); err == nil {
+					output[i] = doc
+					readCount = readCount + 1
+				} else {
+					output[i] = err
+				}
+			} else {
+				output[i] = err
+			}
+		} else {
+			output[i] = err
+		}
+	}
+
+	return readCount, output, nil
 }
 
 func (db *Database) UpdateIndex(data []interface{}) error {
@@ -579,7 +666,7 @@ func (db *Database) DeleteIndex(data []interface{}) error {
 	return db.internalIndex.Batch(batch)
 }
 
-func (db *Database) Search(query string, offset int) (total uint64, queryTime time.Duration, result []Document, err error) {
+func (db *Database) Search(query string, offset int) (total uint64, queryTime time.Duration, result []interface{}, err error) {
 	q := bleve.NewQueryStringQuery(query)
 	searchRequest := bleve.NewSearchRequest(q)
 	searchRequest.From = offset
@@ -592,7 +679,7 @@ func (db *Database) Search(query string, offset int) (total uint64, queryTime ti
 		return
 	}
 
-	result = make([]Document, 0, len(searchResult.Hits))
+	result = make([]interface{}, 0, len(searchResult.Hits))
 	queryTime = searchResult.Took
 	total = searchResult.Total
 
