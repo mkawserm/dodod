@@ -6,11 +6,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/index/upsidedown"
 	"github.com/blevesearch/bleve/mapping"
+	"github.com/blevesearch/bleve/search/query"
 	"github.com/dgraph-io/badger/v2"
 	"github.com/dgraph-io/badger/v2/options"
 	"github.com/mkawserm/bdodb"
@@ -27,7 +27,7 @@ var ErrEmptyPassword = errors.New("dodod: empty password")
 var ErrInvalidData = errors.New("dodod: invalid data")
 var ErrInvalidDocument = errors.New("dodod: invalid document")
 
-var ErrDododTypeFieldDoesNotExists = errors.New("dodod: <type> field does not exists")
+//var ErrDododTypeFieldDoesNotExists = errors.New("dodod: <type> field does not exists")
 
 //var ErrNilPointer = errors.New("dodod: nil pointer")
 var ErrDatabasePasswordChangeFailed = errors.New("dodod: database password change failed")
@@ -666,12 +666,16 @@ func (db *Database) DeleteIndex(data []interface{}) error {
 	return db.internalIndex.Batch(batch)
 }
 
-func (db *Database) Search(query string, offset int) (total uint64, queryTime time.Duration, result []interface{}, err error) {
-	q := bleve.NewQueryStringQuery(query)
+func (db *Database) Search(queryInput string, offset int) (total uint64,
+	queryTime time.Duration,
+	result []interface{},
+	err error) {
+
+	q := bleve.NewQueryStringQuery(queryInput)
 	searchRequest := bleve.NewSearchRequest(q)
 	searchRequest.From = offset
 	searchRequest.Size = db.internalSearchResultLimit
-	searchRequest.Fields = db.GetRegisteredFields()
+	//searchRequest.Fields = db.GetRegisteredFields()
 
 	var searchResult *bleve.SearchResult
 	searchResult, err = db.internalIndex.Search(searchRequest)
@@ -679,23 +683,89 @@ func (db *Database) Search(query string, offset int) (total uint64, queryTime ti
 		return
 	}
 
-	result = make([]interface{}, 0, len(searchResult.Hits))
 	queryTime = searchResult.Took
 	total = searchResult.Total
 
-	fmt.Println(searchResult.Hits)
+	idList := make([]string, len(searchResult.Hits), len(searchResult.Hits))
 
-	for _, v := range searchResult.Hits {
-
-		for _, field := range v.Fields {
-			fmt.Println(field)
-		}
-		//doc, _ := db.internalIndex.Document(v.ID)
-		//dc := doc.(mapping.Classifier)
-		//fmt.Println(doc.)
+	for i, v := range searchResult.Hits {
+		idList[i] = v.ID
 	}
 
-	return total, queryTime, result, err
+	start := time.Now()
+	if _, data, err := db.ReadUsingId(idList); err != nil {
+		return 0, 0, nil, err
+	} else {
+		result = data
+	}
+	elapsed := time.Now().Sub(start)
+
+	return total, queryTime + elapsed, result, err
+}
+
+func (db *Database) ComplexSearch(queryInput string, sortBy []string, queryType string, offset int, limit int) (
+	total uint64,
+	queryTime time.Duration,
+	result []interface{},
+	err error) {
+
+	var q query.Query
+
+	if queryType == "QueryString" {
+		q = bleve.NewQueryStringQuery(queryInput)
+	} else if queryType == "FuzzyQuery" {
+		q = bleve.NewFuzzyQuery(queryInput)
+	} else if queryType == "MatchAllQuery" {
+		q = bleve.NewMatchAllQuery()
+	} else if queryType == "MatchQuery" {
+		q = bleve.NewMatchQuery(queryInput)
+	} else if queryType == "MatchPhraseQuery" {
+		q = bleve.NewMatchPhraseQuery(queryInput)
+	} else if queryType == "RegexpQuery" {
+		q = bleve.NewRegexpQuery(queryInput)
+	} else if queryType == "TermQuery" {
+		q = bleve.NewTermQuery(queryInput)
+	} else if queryType == "WildcardQuery" {
+		q = bleve.NewWildcardQuery(queryInput)
+	} else if queryType == "PrefixQuery" {
+		q = bleve.NewPrefixQuery(queryInput)
+	} else {
+		q = bleve.NewQueryStringQuery(queryInput)
+	}
+	//else if queryType == "PhraseQuery" {
+	//	q = bleve.NewPhraseQuery(queryInput)
+	//}
+
+	searchRequest := bleve.NewSearchRequest(q)
+	searchRequest.From = offset
+	searchRequest.Size = limit
+	searchRequest.SortBy(sortBy)
+	//searchRequest.Fields = db.GetRegisteredFields()
+
+	var searchResult *bleve.SearchResult
+	searchResult, err = db.internalIndex.Search(searchRequest)
+	if err != nil {
+		return
+	}
+
+	queryTime = searchResult.Took
+	total = searchResult.Total
+
+	idList := make([]string, len(searchResult.Hits), len(searchResult.Hits))
+
+	for i, v := range searchResult.Hits {
+		idList[i] = v.ID
+	}
+
+	start := time.Now()
+	if _, data, err := db.ReadUsingId(idList); err != nil {
+		return 0, 0, nil, err
+	} else {
+		result = data
+	}
+	elapsed := time.Now().Sub(start)
+
+	return total, queryTime + elapsed, result, err
 }
 
 func (db *Database) BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error) {
