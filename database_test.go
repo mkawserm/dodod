@@ -6,6 +6,7 @@ import (
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/mkawserm/pasap"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -342,5 +343,52 @@ func TestDatabase_ChangePassword2(t *testing.T) {
 
 	if err := db2.Close(); err != nil {
 		t.Fatalf("error occurred while closing, error: %v", err)
+	}
+}
+
+type MyTestDocument struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
+func (m *MyTestDocument) Type() string {
+	return "MyTestDocument"
+}
+
+func (m *MyTestDocument) GetId() string {
+	return m.Id
+}
+
+type MyTestDocument2 struct {
+	Id   string `json:"id"`
+	Name int    `json:"name"`
+}
+
+func (m *MyTestDocument2) Type() string {
+	return "MyTestDocument2"
+}
+
+func (m *MyTestDocument2) GetId() string {
+	return m.Id
+}
+
+func TestDatabase_RegisterDocument(t *testing.T) {
+	t.Helper()
+
+	db := &Database{}
+	if err := db.RegisterDocument(&MyTestDocument{}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.RegisterDocument(&MyTestDocument{}); err != ErrDocumentTypeAlreadyRegistered {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.RegisterDocument(&MyTestDocument2{}); err != ErrFieldTypeMismatch {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !reflect.DeepEqual(db.GetRegisteredFields(), []string{"id", "name"}) {
+		t.Fatalf("Registered fields are not equal")
 	}
 }
