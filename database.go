@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+var ErrEmptyPath = errors.New("dodod: empty path")
+var ErrEmptyPassword = errors.New("dodod: empty password")
 var ErrNilPointer = errors.New("dodod: nil pointer")
 var ErrDatabasePasswordChangeFailed = errors.New("dodod: database password change failed")
 var ErrIndexStorePasswordChangeFailed = errors.New("dodod: index store password change failed")
@@ -56,7 +58,6 @@ func (d *DbCredentialsBasic) ReadPassword() (password string, err error) {
 }
 
 type Database struct {
-	dbCredentials         DbCredentials
 	passwordHasher        pasap.PasswordHasher
 	encoderCredentialsRW  pasap.EncoderCredentialsRW
 	verifierCredentialsRW pasap.VerifierCredentialsRW
@@ -94,13 +95,19 @@ func (db *Database) initAll() {
 	}
 }
 
-func (db *Database) Setup(dbCredentials DbCredentials,
-	passwordHasher pasap.PasswordHasher,
+func (db *Database) SetDbPath(dbPath string) {
+	db.dbPath = dbPath
+}
+
+func (db *Database) SetDbPassword(dbPassword string) {
+	db.dbPassword = dbPassword
+}
+
+func (db *Database) Setup(passwordHasher pasap.PasswordHasher,
 	encoderCredentialsRW pasap.EncoderCredentialsRW,
 	verifierCredentialsRW pasap.VerifierCredentialsRW,
 	indexOpener IndexOpener) {
 
-	db.dbCredentials = dbCredentials
 	db.passwordHasher = passwordHasher
 	db.encoderCredentialsRW = encoderCredentialsRW
 	db.verifierCredentialsRW = verifierCredentialsRW
@@ -108,10 +115,6 @@ func (db *Database) Setup(dbCredentials DbCredentials,
 
 	db.initAll()
 	db.initIndexMapping()
-}
-
-func (db *Database) SetDbCredentials(credentials DbCredentials) {
-	db.dbCredentials = credentials
 }
 
 func (db *Database) SetPasswordHasher(passwordHasher pasap.PasswordHasher) {
@@ -156,16 +159,8 @@ func (db *Database) Open() error {
 	db.initAll()
 	db.initIndexMapping()
 
-	if path, err := db.dbCredentials.ReadPath(); err != nil {
-		return err
-	} else {
-		db.dbPath = path
-	}
-
-	if password, err := db.dbCredentials.ReadPassword(); err != nil {
-		return err
-	} else {
-		db.dbPassword = password
+	if db.dbPath == "" {
+		return ErrEmptyPath
 	}
 
 	// Ensure path exists or create path
@@ -631,20 +626,12 @@ func (db *Database) openDb() error {
 }
 
 func (db *Database) ChangePassword(newPassword string) error {
-	if db.dbCredentials == nil {
-		return ErrNilPointer
+	if db.dbPath == "" {
+		return ErrEmptyPath
 	}
 
-	if path, err := db.dbCredentials.ReadPath(); err != nil {
-		return err
-	} else {
-		db.dbPath = path
-	}
-
-	if password, err := db.dbCredentials.ReadPassword(); err != nil {
-		return err
-	} else {
-		db.dbPassword = password
+	if db.dbPassword == "" {
+		return ErrEmptyPassword
 	}
 
 	if ok, err := db.readConfig(); !ok {

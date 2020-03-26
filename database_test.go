@@ -29,7 +29,8 @@ func TestDb_OpenCloseWithPassword(t *testing.T) {
 
 	{
 		db := &Database{}
-		db.SetDbCredentials(credentials)
+		db.SetDbPassword(credentials.Password)
+		db.SetDbPath(credentials.Path)
 		db.SetupDefaults()
 		err := db.Open()
 
@@ -44,7 +45,8 @@ func TestDb_OpenCloseWithPassword(t *testing.T) {
 
 	{
 		db := &Database{}
-		db.SetDbCredentials(credentials)
+		db.SetDbPassword(credentials.Password)
+		db.SetDbPath(credentials.Path)
 		db.SetupDefaults()
 		err := db.Open()
 
@@ -73,7 +75,8 @@ func TestDb_OpenCloseWithoutPassword(t *testing.T) {
 	{
 		db := &Database{}
 		db.SetupDefaults()
-		db.SetDbCredentials(credentials)
+		db.SetDbPassword(credentials.Password)
+		db.SetDbPath(credentials.Path)
 		err := db.Open()
 
 		if err != nil {
@@ -87,7 +90,8 @@ func TestDb_OpenCloseWithoutPassword(t *testing.T) {
 
 	{
 		db := &Database{}
-		db.SetDbCredentials(credentials)
+		db.SetDbPassword(credentials.Password)
+		db.SetDbPath(credentials.Path)
 		db.SetupDefaults()
 		err := db.Open()
 
@@ -116,7 +120,9 @@ func TestDb_Setup(t *testing.T) {
 	t.Run("Call Setup", func(t *testing.T) {
 		db := &Database{}
 		defer cleanupDb(t, dbPath)
-		db.Setup(credentials,
+		db.SetDbPassword(credentials.Password)
+		db.SetDbPath(credentials.Path)
+		db.Setup(
 			pasap.NewArgon2idHasher(),
 			&pasap.ByteBasedEncoderCredentials{},
 			&pasap.ByteBasedVerifierCredentials{},
@@ -135,7 +141,8 @@ func TestDb_Setup(t *testing.T) {
 	t.Run("Call Individual set", func(t *testing.T) {
 		db := &Database{}
 		defer cleanupDb(t, dbPath)
-		db.SetDbCredentials(credentials)
+		db.SetDbPassword(credentials.Password)
+		db.SetDbPath(credentials.Path)
 		db.SetPasswordHasher(pasap.NewArgon2idHasher())
 		db.SetEncoderCredentialsRW(&pasap.ByteBasedEncoderCredentials{})
 		db.SetVerifierCredentialsRW(&pasap.ByteBasedVerifierCredentials{})
@@ -163,30 +170,30 @@ func (b *mockIndexOpener) BleveIndex(string, *mapping.IndexMappingImpl, string, 
 	return nil, mockErrOpenIndex
 }
 
-var mockErrInvalidPath = errors.New("mock: invalid path")
-var mockErrInvalidPass = errors.New("moc: invalid password")
+//var mockErrInvalidPath = errors.New("mock: invalid path")
+//var mockErrInvalidPass = errors.New("moc: invalid password")
+//
+//type mockCredentialsInvalidPath struct {
+//}
+//
+//func (d *mockCredentialsInvalidPath) ReadPath() (dbPath string, err error) {
+//	return "", mockErrInvalidPath
+//}
+//
+//func (d *mockCredentialsInvalidPath) ReadPassword() (password string, err error) {
+//	return "123123", nil
+//}
 
-type mockCredentialsInvalidPath struct {
-}
-
-func (d *mockCredentialsInvalidPath) ReadPath() (dbPath string, err error) {
-	return "", mockErrInvalidPath
-}
-
-func (d *mockCredentialsInvalidPath) ReadPassword() (password string, err error) {
-	return "123123", nil
-}
-
-type mockCredentialsInvalidPassword struct {
-}
-
-func (d *mockCredentialsInvalidPassword) ReadPath() (dbPath string, err error) {
-	return "/tmp/test_db", nil
-}
-
-func (d *mockCredentialsInvalidPassword) ReadPassword() (password string, err error) {
-	return "", mockErrInvalidPass
-}
+//type mockCredentialsInvalidPassword struct {
+//}
+//
+//func (d *mockCredentialsInvalidPassword) ReadPath() (dbPath string, err error) {
+//	return "/tmp/test_db", nil
+//}
+//
+//func (d *mockCredentialsInvalidPassword) ReadPassword() (password string, err error) {
+//	return "", mockErrInvalidPass
+//}
 
 func TestMockOpenFailure(t *testing.T) {
 	t.Helper()
@@ -202,7 +209,8 @@ func TestMockOpenFailure(t *testing.T) {
 		db := &Database{}
 		defer cleanupDb(t, dbPath)
 		db.SetupDefaults()
-		db.SetDbCredentials(credentials)
+		db.SetDbPassword(credentials.Password)
+		db.SetDbPath(credentials.Path)
 		db.SetIndexOpener(&mockIndexOpener{})
 		err := db.Open()
 		if err != mockErrOpenIndex {
@@ -216,9 +224,8 @@ func TestMockOpenFailure(t *testing.T) {
 	t.Run("Credentials path failure", func(t *testing.T) {
 		db := &Database{}
 		db.SetupDefaults()
-		db.SetDbCredentials(&mockCredentialsInvalidPath{})
 		err := db.Open()
-		if err != mockErrInvalidPath {
+		if err != ErrEmptyPath {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if err := db.Close(); err != nil {
@@ -226,17 +233,17 @@ func TestMockOpenFailure(t *testing.T) {
 		}
 	})
 
-	t.Run("Credentials password failure", func(t *testing.T) {
-		db := &Database{}
-		db.SetupDefaults()
-		db.SetDbCredentials(&mockCredentialsInvalidPassword{})
-		err := db.Open()
-		if err != mockErrInvalidPass {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if err := db.Close(); err != nil {
-			t.Fatalf("error occured while closing, error: %v", err)
-		}
-	})
+	//t.Run("Credentials password failure", func(t *testing.T) {
+	//	db := &Database{}
+	//	db.SetupDefaults()
+	//	db.SetDbCredentials(&mockCredentialsInvalidPassword{})
+	//	err := db.Open()
+	//	if err != mockErrInvalidPass {
+	//		t.Fatalf("unexpected error: %v", err)
+	//	}
+	//	if err := db.Close(); err != nil {
+	//		t.Fatalf("error occured while closing, error: %v", err)
+	//	}
+	//})
 
 }
