@@ -252,3 +252,95 @@ func TestMockOpenFailure(t *testing.T) {
 	//})
 
 }
+
+func TestDatabase_ChangePassword(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+	dbNewPassword := "password2"
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	//db.SetIndexStoreName("scorch")
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
+
+	db2 := &Database{}
+	//db2.SetIndexStoreName("scorch")
+	db2.SetupDefaults()
+	db2.SetDbPassword(dbPassword)
+	db2.SetDbPath(dbPath)
+
+	err = db2.ChangePassword(dbNewPassword)
+	if err != nil {
+		t.Fatalf("unexpected error while changing password: %v", err)
+	}
+
+	db2.SetDbPassword(dbNewPassword)
+
+	err = db2.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db2.Close(); err != nil {
+		t.Fatalf("error occurred while closing, error: %v", err)
+	}
+}
+
+func TestDatabase_ChangePassword2(t *testing.T) {
+	t.Helper()
+
+	dbPath := "/tmp/dodod"
+	dbPassword := "password"
+	dbNewPassword := "password2"
+
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	db.SetIndexStoreName("scorch")
+	db.SetupDefaults()
+	db.SetDbPassword(dbPassword)
+	db.SetDbPath(dbPath)
+
+	err := db.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
+
+	db2 := &Database{}
+	db2.SetIndexStoreName("scorch")
+	db2.SetupDefaults()
+	db2.SetDbPassword(dbPassword)
+	db2.SetDbPath(dbPath)
+
+	err = db2.ChangePassword(dbNewPassword)
+	if err != nil {
+		t.Fatalf("unexpected error while changing password: %v", err)
+	}
+
+	db2.SetDbPassword(dbNewPassword)
+
+	err = db2.Open()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db2.Close(); err != nil {
+		t.Fatalf("error occurred while closing, error: %v", err)
+	}
+}

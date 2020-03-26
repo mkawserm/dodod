@@ -674,7 +674,7 @@ func (db *Database) ChangePassword(newPassword string) error {
 			EncryptionKeyRotationDuration: 10 * 24 * time.Hour,
 		}
 
-		kr1, err1 := badger.OpenKeyRegistry(opt)
+		kr1, err1 := badger.OpenKeyRegistry(opt1)
 		if err1 != nil {
 			return err1
 		}
