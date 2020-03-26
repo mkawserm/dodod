@@ -13,26 +13,26 @@ type Logger interface {
 	Debugf(f string, v ...interface{})
 }
 
-type defaultLog struct {
+type defaultLogger struct {
 	*log.Logger
 }
 
-func (l *defaultLog) Errorf(f string, v ...interface{}) {
+func (l *defaultLogger) Errorf(f string, v ...interface{}) {
 	l.Printf("ERROR: "+f, v...)
 }
 
-func (l *defaultLog) Warningf(f string, v ...interface{}) {
+func (l *defaultLogger) Warningf(f string, v ...interface{}) {
 	l.Printf("WARNING: "+f, v...)
 }
 
-func (l *defaultLog) Infof(f string, v ...interface{}) {
+func (l *defaultLogger) Infof(f string, v ...interface{}) {
 	l.Printf("INFO: "+f, v...)
 }
 
-func (l *defaultLog) Debugf(f string, v ...interface{}) {
+func (l *defaultLogger) Debugf(f string, v ...interface{}) {
 	l.Printf("DEBUG: "+f, v...)
 }
 
 // DefaultLogger is the default logger for dodod
 // Set different logger to modify the logging behavior
-var DefaultLogger Logger = &defaultLog{Logger: log.New(os.Stderr, "dodod ", log.LstdFlags)}
+var DefaultLogger Logger = &defaultLogger{Logger: log.New(os.Stderr, "dodod ", log.LstdFlags)}
