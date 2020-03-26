@@ -43,3 +43,15 @@ func TestExtractFields(t *testing.T) {
 		t.Fatalf("Id does not match")
 	}
 }
+
+func TestGetType(t *testing.T) {
+	t.Helper()
+
+	if GetType(&mockDocumentStruct{}) != "mockDocumentStruct" {
+		t.Fatalf("unexpected document")
+	}
+
+	if GetType([]string{"1"}) != "" {
+		t.Fatalf("unexpected document")
+	}
+}

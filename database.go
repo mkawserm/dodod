@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/index/scorch"
 	"github.com/blevesearch/bleve/index/upsidedown"
@@ -21,28 +20,6 @@ import (
 	"reflect"
 	"time"
 )
-
-var ErrEmptyPath = errors.New("dodod: empty path")
-var ErrEmptyPassword = errors.New("dodod: empty password")
-var ErrInvalidData = errors.New("dodod: invalid data")
-var ErrInvalidDocument = errors.New("dodod: invalid document")
-
-//var ErrDododTypeFieldDoesNotExists = errors.New("dodod: <type> field does not exists")
-
-//var ErrNilPointer = errors.New("dodod: nil pointer")
-var ErrDatabasePasswordChangeFailed = errors.New("dodod: database password change failed")
-var ErrIndexStorePasswordChangeFailed = errors.New("dodod: index store password change failed")
-
-var ErrDatabaseTransactionFailed = errors.New("dodod: database transaction failed")
-var ErrIndexStoreTransactionFailed = errors.New("dodod: index store transaction failed")
-
-var ErrIdCanNotBeEmpty = errors.New("dodod: id can not be empty")
-var ErrDatabaseIsNotOpen = errors.New("dodod: database is not open")
-
-// ErrFieldTypeMismatch will occur if the field already registered as different type
-var ErrFieldTypeMismatch = errors.New("dodod: field type mismatch")
-var ErrDocumentTypeAlreadyRegistered = errors.New("dodod: document type already registered")
-var ErrDocumentTypeIsNotRegistered = errors.New("dodod: document type is not registered")
 
 type BleveIndexOpener struct {
 }

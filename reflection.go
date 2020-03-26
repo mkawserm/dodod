@@ -1,7 +1,6 @@
 package dodod
 
 import (
-	"errors"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/analysis/analyzer/simple"
 	"github.com/blevesearch/bleve/mapping"
@@ -11,13 +10,6 @@ import (
 	"strings"
 	"time"
 )
-
-var ErrInvalidBase = errors.New(`dodod: invalid base`)
-var ErrInvalidDoc = errors.New(`dodod: invalid doc, nil pointer`)
-var ErrInvalidDocNotStruct = errors.New(`dodod: invalid doc, not a struct`)
-var ErrUnknownBaseType = errors.New(`dodod: unknown base type`)
-var ErrNonBooleanValueForBooleanField = errors.New(`dodod: non-boolean value for boolean field`)
-var ErrUnknownMappingField = errors.New(`dodod: tried to set mapping field of unknown type`)
 
 func ExtractFields(document interface{}) map[string]string {
 	data := make(map[string]string)
@@ -46,13 +38,13 @@ func GetId(document interface{}) string {
 	return getId(reflect.TypeOf(document), reflect.ValueOf(document))
 }
 
-func GetType(document Document) string {
-	return document.Type()
+func GetType(document interface{}) string {
+	if d, ok := document.(Document); ok {
+		return d.Type()
+	} else {
+		return ""
+	}
 }
-
-//func GetDododType(document interface{}) string {
-//	return getDododType(reflect.TypeOf(document), reflect.ValueOf(document))
-//}
 
 func getId(t reflect.Type, v reflect.Value) string {
 	if t.Kind() == reflect.Ptr {
