@@ -25,7 +25,7 @@ var ErrDatabasePasswordChangeFailed = errors.New("dodod: database password chang
 var ErrIndexStorePasswordChangeFailed = errors.New("dodod: index store password change failed")
 
 var ErrDatabaseTransactionFailed = errors.New("dodod: database transaction failed")
-var ErrIndexingTransactionFailed = errors.New("dodod: indexing transaction failed")
+var ErrIndexStoreTransactionFailed = errors.New("dodod: index store transaction failed")
 
 var ErrIdCanNotBeEmpty = errors.New("dodod: id can not be empty")
 var ErrDatabaseIsNotOpen = errors.New("dodod: database is not open")
@@ -289,7 +289,7 @@ func (db *Database) Create(data []Document) error {
 
 	err2 = db.internalIndex.Batch(batch)
 	if err2 != nil {
-		return ErrIndexingTransactionFailed
+		return ErrIndexStoreTransactionFailed
 	}
 
 	return nil
@@ -338,7 +338,7 @@ func (db *Database) Update(data []Document) error {
 
 	err2 = db.internalIndex.Batch(batch)
 	if err2 != nil {
-		return ErrIndexingTransactionFailed
+		return ErrIndexStoreTransactionFailed
 	}
 
 	return nil
@@ -376,7 +376,7 @@ func (db *Database) Delete(data []Document) error {
 
 	err2 = db.internalIndex.Batch(batch)
 	if err2 != nil {
-		return ErrIndexingTransactionFailed
+		return ErrIndexStoreTransactionFailed
 	}
 
 	return nil
