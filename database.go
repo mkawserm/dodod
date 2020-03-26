@@ -30,7 +30,7 @@ var ErrIndexStoreTransactionFailed = errors.New("dodod: index store transaction 
 var ErrIdCanNotBeEmpty = errors.New("dodod: id can not be empty")
 var ErrDatabaseIsNotOpen = errors.New("dodod: database is not open")
 
-// ErrFieldTypeMismatch will occur if current field already registered as different type
+// ErrFieldTypeMismatch will occur if the field already registered as different type
 var ErrFieldTypeMismatch = errors.New("dodod: field type mismatch")
 var ErrDocumentTypeAlreadyRegistered = errors.New("dodod: document type already registered")
 
