@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 )
+
 import "github.com/blevesearch/bleve"
 
 type Search interface {
@@ -32,4 +33,22 @@ type BleveSearch interface {
 	BleveSearchInContext(
 		ctx context.Context,
 		req *bleve.SearchRequest) (*bleve.SearchResult, error)
+}
+
+type FaceInput struct {
+	FacetName  string `json:"facetName"`
+	QueryInput string `json:"queryInput"`
+	FacetLimit int    `json:"facetLimit"`
+}
+
+type FacetOutput struct {
+	TermName  string `json:"termName"`
+	TermCount int    `json:"termCount"`
+}
+
+type FacetSearch interface {
+	FacetSearch(facetInput []FaceInput) (
+		queryTime time.Duration,
+		data map[string][]FacetOutput,
+		err error)
 }

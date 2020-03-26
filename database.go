@@ -395,46 +395,6 @@ func (db *Database) Create(data []interface{}) error {
 	return nil
 }
 
-func (db *Database) AddDocument(data []interface{}) error {
-	if !db.IsDatabaseReady() {
-		return ErrDatabaseIsNotOpen
-	}
-
-	var err1 error
-
-	internalBatchTxn := db.internalDb.NewTransaction(true)
-	defer internalBatchTxn.Discard()
-
-	for _, d := range data {
-		var id string
-		if n, ok := d.(Document); ok {
-			id = n.GetId()
-		} else {
-			return ErrInvalidDocument
-		}
-
-		if id == "" {
-			return ErrIdCanNotBeEmpty
-		}
-
-		if jsonData, err := db.EncodeDocument(d); err == nil {
-			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-
-	}
-
-	err1 = internalBatchTxn.Commit()
-	if err1 != nil {
-		return ErrDatabaseTransactionFailed
-	}
-
-	return nil
-}
-
 func (db *Database) Update(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
@@ -490,49 +450,6 @@ func (db *Database) Update(data []interface{}) error {
 	return nil
 }
 
-func (db *Database) UpdateDocument(data []interface{}) error {
-	if !db.IsDatabaseReady() {
-		return ErrDatabaseIsNotOpen
-	}
-
-	var err1 error
-
-	internalBatchTxn := db.internalDb.NewTransaction(true)
-	defer internalBatchTxn.Discard()
-
-	for _, d := range data {
-		var id string
-		if n, ok := d.(Document); ok {
-			id = n.GetId()
-		} else {
-			return ErrInvalidDocument
-		}
-
-		if id == "" {
-			return ErrIdCanNotBeEmpty
-		}
-
-		if err := internalBatchTxn.Delete([]byte(id)); err != nil {
-			return err
-		}
-
-		if jsonData, err := db.EncodeDocument(d); err == nil {
-			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
-
-	err1 = internalBatchTxn.Commit()
-	if err1 != nil {
-		return ErrDatabaseTransactionFailed
-	}
-
-	return nil
-}
-
 func (db *Database) Delete(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
@@ -572,6 +489,89 @@ func (db *Database) Delete(data []interface{}) error {
 	err2 = db.internalIndex.Batch(batch)
 	if err2 != nil {
 		return ErrIndexStoreTransactionFailed
+	}
+
+	return nil
+}
+
+func (db *Database) AddDocument(data []interface{}) error {
+	if !db.IsDatabaseReady() {
+		return ErrDatabaseIsNotOpen
+	}
+
+	var err1 error
+
+	internalBatchTxn := db.internalDb.NewTransaction(true)
+	defer internalBatchTxn.Discard()
+
+	for _, d := range data {
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		if jsonData, err := db.EncodeDocument(d); err == nil {
+			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+
+	}
+
+	err1 = internalBatchTxn.Commit()
+	if err1 != nil {
+		return ErrDatabaseTransactionFailed
+	}
+
+	return nil
+}
+
+func (db *Database) UpdateDocument(data []interface{}) error {
+	if !db.IsDatabaseReady() {
+		return ErrDatabaseIsNotOpen
+	}
+
+	var err1 error
+
+	internalBatchTxn := db.internalDb.NewTransaction(true)
+	defer internalBatchTxn.Discard()
+
+	for _, d := range data {
+		var id string
+		if n, ok := d.(Document); ok {
+			id = n.GetId()
+		} else {
+			return ErrInvalidDocument
+		}
+
+		if id == "" {
+			return ErrIdCanNotBeEmpty
+		}
+
+		if err := internalBatchTxn.Delete([]byte(id)); err != nil {
+			return err
+		}
+
+		if jsonData, err := db.EncodeDocument(d); err == nil {
+			if err := internalBatchTxn.Set([]byte(id), jsonData); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
+
+	err1 = internalBatchTxn.Commit()
+	if err1 != nil {
+		return ErrDatabaseTransactionFailed
 	}
 
 	return nil
@@ -821,6 +821,52 @@ func (db *Database) Search(queryInput string, offset int) (total uint64,
 	elapsed := time.Now().Sub(start)
 
 	return total, queryTime + elapsed, result, err
+}
+
+func (db *Database) FacetSearch(facetInput []FaceInput) (queryTime time.Duration,
+	data map[string][]FacetOutput,
+	err error) {
+
+	q := bleve.NewMatchAllQuery()
+	searchRequest := bleve.NewSearchRequest(q)
+	searchRequest.Size = 0
+	for _, fi := range facetInput {
+		searchRequest.AddFacet(fi.FacetName, bleve.NewFacetRequest(fi.QueryInput, fi.FacetLimit))
+	}
+
+	var searchResult *bleve.SearchResult
+	searchResult, err = db.internalIndex.Search(searchRequest)
+	if err != nil {
+		return
+	}
+
+	queryTime = searchResult.Took
+
+	if len(searchResult.Facets) > 0 {
+		data = make(map[string][]FacetOutput)
+		for fn, f := range searchResult.Facets {
+			data[fn] = make([]FacetOutput, 0, len(f.Terms)+1)
+			data[fn] = append(data[fn], FacetOutput{TermName: fn, TermCount: f.Total})
+
+			for _, t := range f.Terms {
+				fo := FacetOutput{
+					TermName:  t.Term,
+					TermCount: t.Count,
+				}
+				data[fn] = append(data[fn], fo)
+			}
+
+			if f.Other != 0 {
+				fo := FacetOutput{
+					TermName:  "Extras",
+					TermCount: f.Other,
+				}
+				data[fn] = append(data[fn], fo)
+			}
+		}
+	}
+
+	return
 }
 
 func (db *Database) ComplexSearch(queryInput string, sortBy []string, queryType string, offset int, limit int) (
