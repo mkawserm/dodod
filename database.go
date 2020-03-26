@@ -1,6 +1,7 @@
 package dodod
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/blevesearch/bleve"
@@ -454,6 +455,22 @@ func (db *Database) DeleteIndex(data []Document) error {
 	}
 
 	return db.internalIndex.Batch(batch)
+}
+
+func (db *Database) BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error) {
+	if !db.IsDatabaseReady() {
+		return nil, ErrDatabaseIsNotOpen
+	}
+
+	return db.internalIndex.Search(req)
+}
+
+func (db *Database) BleveSearchInContext(ctx context.Context, req *bleve.SearchRequest) (*bleve.SearchResult, error) {
+	if !db.IsDatabaseReady() {
+		return nil, ErrDatabaseIsNotOpen
+	}
+
+	return db.internalIndex.SearchInContext(ctx, req)
 }
 
 func (db *Database) isDbExists() bool {
