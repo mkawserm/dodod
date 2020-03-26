@@ -19,7 +19,8 @@ import (
 
 var ErrEmptyPath = errors.New("dodod: empty path")
 var ErrEmptyPassword = errors.New("dodod: empty password")
-var ErrNilPointer = errors.New("dodod: nil pointer")
+
+//var ErrNilPointer = errors.New("dodod: nil pointer")
 var ErrDatabasePasswordChangeFailed = errors.New("dodod: database password change failed")
 var ErrIndexStorePasswordChangeFailed = errors.New("dodod: index store password change failed")
 
@@ -42,19 +43,6 @@ func (b *BleveIndexOpener) BleveIndex(dbPath string,
 	config map[string]interface{}) (bleve.Index, error) {
 
 	return bdodb.BleveIndex(dbPath, indexMapping, indexName, config)
-}
-
-type DbCredentialsBasic struct {
-	Path     string
-	Password string
-}
-
-func (d *DbCredentialsBasic) ReadPath() (dbPath string, err error) {
-	return d.Path, nil
-}
-
-func (d *DbCredentialsBasic) ReadPassword() (password string, err error) {
-	return d.Password, nil
 }
 
 type Database struct {
@@ -705,13 +693,17 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() {
+		_ = in.Close()
+	}()
 
 	out, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		_ = out.Close()
+	}()
 
 	_, err = io.Copy(out, in)
 	if err != nil {

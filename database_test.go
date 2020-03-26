@@ -9,6 +9,11 @@ import (
 	"testing"
 )
 
+type DbCredentialsBasic struct {
+	Path     string
+	Password string
+}
+
 func cleanupDb(t *testing.T, path string) {
 	t.Helper()
 	err := os.RemoveAll(path)
