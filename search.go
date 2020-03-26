@@ -15,7 +15,11 @@ type Search interface {
 }
 
 type ComplexSearch interface {
-	ComplexSearch(queryInput string, sortBy []string, queryType string, offset int, limit int) (
+	ComplexSearch(
+		queryInput string,
+		sortBy []string,
+		queryType string,
+		offset int, limit int) (
 		total uint64,
 		queryTime time.Duration,
 		result []interface{},
@@ -24,5 +28,8 @@ type ComplexSearch interface {
 
 type BleveSearch interface {
 	BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error)
-	BleveSearchInContext(ctx context.Context, req *bleve.SearchRequest) (*bleve.SearchResult, error)
+
+	BleveSearchInContext(
+		ctx context.Context,
+		req *bleve.SearchRequest) (*bleve.SearchResult, error)
 }
