@@ -8,6 +8,7 @@ import (
 	"os"
 	"sort"
 	"testing"
+	"time"
 )
 
 type DbCredentialsBasic struct {
@@ -1217,4 +1218,43 @@ func TestDatabase_EncodeDecodeDocument(t *testing.T) {
 	if err := db.Close(); err != nil {
 		t.Fatalf("error occured while closing, error: %v", err)
 	}
+}
+
+type FirstMixedType struct {
+	Id        string `json:"id"`
+	MixedType string `json:"mixed_type"`
+
+	Field1 string    `json:"field_1"`
+	Field2 string    `json:"field_2"`
+	Field3 int64     `json:"field_3"`
+	Field4 float64   `json:"field_4"`
+	Field5 bool      `json:"field_5"`
+	Field6 []byte    `json:"field_6"`
+	Field7 time.Time `json:"field_7"`
+}
+
+type SecondMixedType struct {
+	Id        string `json:"id"`
+	MixedType string `json:"mixed_type"`
+
+	Field8  string    `json:"field_8"`
+	Field9  string    `json:"field_9"`
+	Field10 int64     `json:"field_10"`
+	Field11 float64   `json:"field_11"`
+	Field12 bool      `json:"field_12"`
+	Field13 []byte    `json:"field_13"`
+	Field14 time.Time `json:"field_14"`
+}
+
+type ThirdMixedType struct {
+	Id        string `json:"id"`
+	MixedType string `json:"mixed_type"`
+
+	Field15 string    `json:"field_15"`
+	Field16 string    `json:"field_16"`
+	Field17 int64     `json:"field_17"`
+	Field18 float64   `json:"field_18"`
+	Field19 bool      `json:"field_19"`
+	Field20 []byte    `json:"field_20"`
+	Field21 time.Time `json:"field_21"`
 }
