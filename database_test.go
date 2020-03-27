@@ -511,17 +511,17 @@ func TestDatabase_CRUD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if _, err := db.Read([]interface{}{&MyTestDocument{
+	if _, err := db.GetDocument([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != ErrDatabaseIsNotOpen {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if _, _, err := db.ReadUsingId([]string{"1"}); err != ErrDatabaseIsNotOpen {
+	if _, _, err := db.Read([]string{"1"}); err != ErrDatabaseIsNotOpen {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if _, _, err := db.ReadUsingIdWithError([]string{"1"}); err != ErrDatabaseIsNotOpen {
+	if _, _, err := db.GetDocumentWithError([]string{"1"}); err != ErrDatabaseIsNotOpen {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
@@ -558,7 +558,7 @@ func TestDatabase_CRUD(t *testing.T) {
 
 	data := []interface{}{&MyTestDocument{Id: "1"}}
 
-	if n, err := db.Read(data); err != nil {
+	if n, err := db.GetDocument(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 1 {
@@ -566,18 +566,7 @@ func TestDatabase_CRUD(t *testing.T) {
 		}
 	}
 
-	if n, data, err := db.ReadUsingId([]string{"1"}); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	} else {
-		if n != 1 {
-			t.Fatalf("read failure")
-		}
-		if len(data) != 1 {
-			t.Fatalf("read failure")
-		}
-	}
-
-	if n, data, err := db.ReadUsingId([]string{"1", "2"}); err != nil {
+	if n, data, err := db.Read([]string{"1"}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 1 {
@@ -588,7 +577,18 @@ func TestDatabase_CRUD(t *testing.T) {
 		}
 	}
 
-	if n, data, err := db.ReadUsingIdWithError([]string{"1", "2"}); err != nil {
+	if n, data, err := db.Read([]string{"1", "2"}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if n != 1 {
+			t.Fatalf("read failure")
+		}
+		if len(data) != 1 {
+			t.Fatalf("read failure")
+		}
+	}
+
+	if n, data, err := db.GetDocumentWithError([]string{"1", "2"}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 1 {
@@ -606,7 +606,7 @@ func TestDatabase_CRUD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if n, err := db.Read(data); err != nil {
+	if n, err := db.GetDocument(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 1 {
@@ -626,7 +626,7 @@ func TestDatabase_CRUD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if n, err := db.Read(data); err != nil {
+	if n, err := db.GetDocument(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 0 {
@@ -700,7 +700,7 @@ func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
 
 	data := []interface{}{&MyTestDocument{Id: "1"}}
 
-	if n, err := db.Read(data); err != nil {
+	if n, err := db.GetDocument(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 1 {
@@ -715,7 +715,7 @@ func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if n, err := db.Read(data); err != nil {
+	if n, err := db.GetDocument(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 1 {
@@ -735,7 +735,7 @@ func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if n, err := db.Read(data); err != nil {
+	if n, err := db.GetDocument(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 0 {

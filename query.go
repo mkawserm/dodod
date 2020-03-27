@@ -1,7 +1,8 @@
 package dodod
 
 type Query interface {
-	Read(data []interface{}) (uint64, error)
-	ReadUsingId(data []string) (uint64, []interface{}, error)
-	ReadUsingIdWithError(data []string) (uint64, []interface{}, error)
+	Read(data []string) (uint64, []interface{}, error)
+
+	GetDocument(data []interface{}) (uint64, error)
+	GetDocumentWithError(data []string) (uint64, []interface{}, error)
 }

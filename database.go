@@ -620,7 +620,34 @@ func (db *Database) DeleteDocument(data []interface{}) error {
 	return nil
 }
 
-func (db *Database) Read(data []interface{}) (uint64, error) {
+func (db *Database) Read(data []string) (uint64, []interface{}, error) {
+	if !db.IsDatabaseReady() {
+		return 0, nil, ErrDatabaseIsNotOpen
+	}
+
+	internalBatchTxn := db.internalDb.NewTransaction(false)
+	defer internalBatchTxn.Discard()
+
+	output := make([]interface{}, len(data), len(data))
+	var readCount = 0
+	for _, id := range data {
+		if id == "" {
+			continue
+		}
+
+		if item, err := internalBatchTxn.Get([]byte(id)); err == nil {
+			if value, err := item.ValueCopy(nil); err == nil {
+				if doc, err := db.DecodeDocument(value); err == nil {
+					output[readCount] = doc
+					readCount = readCount + 1
+				}
+			}
+		}
+	}
+	return uint64(readCount), output[:readCount], nil
+}
+
+func (db *Database) GetDocument(data []interface{}) (uint64, error) {
 	if !db.IsDatabaseReady() {
 		return 0, ErrDatabaseIsNotOpen
 	}
@@ -661,34 +688,7 @@ func (db *Database) Read(data []interface{}) (uint64, error) {
 	return readCount, nil
 }
 
-func (db *Database) ReadUsingId(data []string) (uint64, []interface{}, error) {
-	if !db.IsDatabaseReady() {
-		return 0, nil, ErrDatabaseIsNotOpen
-	}
-
-	internalBatchTxn := db.internalDb.NewTransaction(false)
-	defer internalBatchTxn.Discard()
-
-	output := make([]interface{}, len(data), len(data))
-	var readCount = 0
-	for _, id := range data {
-		if id == "" {
-			continue
-		}
-
-		if item, err := internalBatchTxn.Get([]byte(id)); err == nil {
-			if value, err := item.ValueCopy(nil); err == nil {
-				if doc, err := db.DecodeDocument(value); err == nil {
-					output[readCount] = doc
-					readCount = readCount + 1
-				}
-			}
-		}
-	}
-	return uint64(readCount), output[:readCount], nil
-}
-
-func (db *Database) ReadUsingIdWithError(data []string) (uint64, []interface{}, error) {
+func (db *Database) GetDocumentWithError(data []string) (uint64, []interface{}, error) {
 	if !db.IsDatabaseReady() {
 		return 0, nil, ErrDatabaseIsNotOpen
 	}
@@ -821,7 +821,7 @@ func (db *Database) Search(queryInput string, offset int) (total uint64,
 	}
 
 	start := time.Now()
-	if _, data, err := db.ReadUsingId(idList); err != nil {
+	if _, data, err := db.Read(idList); err != nil {
 		return 0, 0, nil, err
 	} else {
 		result = data
@@ -960,7 +960,7 @@ func (db *Database) ComplexSearch(queryInput string,
 	}
 
 	start := time.Now()
-	if _, data, err := db.ReadUsingId(idList); err != nil {
+	if _, data, err := db.Read(idList); err != nil {
 		return 0, 0, nil, err
 	} else {
 		result = data
