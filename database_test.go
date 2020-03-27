@@ -1295,12 +1295,14 @@ func (m *ThirdMixedType) GetId() string {
 	return m.Id
 }
 
-func createTestData() (documentTypes []interface{}, testData []interface{}) {
+func createTestData() (documentTypes []interface{}, testIds []string, testData []interface{}) {
 	documentTypes = []interface{}{
 		&FirstMixedType{},
 		&SecondMixedType{},
 		&ThirdMixedType{},
 	}
+
+	testIds = []string{"1", "2", "3"}
 
 	testData = []interface{}{
 		&FirstMixedType{
@@ -1348,4 +1350,216 @@ func createTestData() (documentTypes []interface{}, testData []interface{}) {
 	}
 
 	return
+}
+
+func TestDatabaseTable(t *testing.T) {
+	t.Helper()
+
+	documentTypes, testIds, testData := createTestData()
+
+	dbPath := "/tmp/dodod"
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	db.SetDbPath(dbPath)
+	db.SetupDefaults()
+
+	// Register documents before opening database
+	for _, v := range documentTypes {
+		if err := db.RegisterDocument(v); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	}
+
+	// Register document expected failure
+	if err := db.RegisterDocument(map[string]string{"1": "1"}); err != ErrInvalidDocument {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Get registered document
+	if v := db.GetRegisteredDocument(); v == nil {
+		t.Fatalf("registered document should not be nil")
+	}
+
+	// Encode document expected error
+	if _, err := db.EncodeDocument(map[string]string{"1": "1"}); err != ErrInvalidDocument {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Decode document expected error
+	if _, err := db.DecodeDocument([]byte("1231")); err != ErrInvalidData {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Decode document expected error
+	if _, err := db.DecodeDocument([]byte("1234567890")); err != ErrInvalidData {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Open database
+	if err := db.Open(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Get internal db for just covering
+	if v := db.GetInternalDatabase(); v == nil {
+		t.Fatalf("Internal database should not be nil")
+	}
+
+	// Add test data to the database
+	if err := db.Create(testData); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Read data using id
+	if total, data, err := db.Read(testIds); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if len(testIds) != len(data) {
+			t.Fatalf("read failure")
+		}
+		if total != uint64(len(data)) {
+			t.Fatalf("read failure")
+		}
+
+		if v, ok := data[0].(Document); ok {
+			if v.Type() != "FirstMixedType" {
+				t.Fatalf("unknown type")
+			}
+		}
+
+		if v, ok := data[1].(Document); ok {
+			if v.Type() != "SecondMixedType" {
+				t.Fatalf("unknown type")
+			}
+		}
+
+		if v, ok := data[2].(Document); ok {
+			if v.Type() != "ThirdMixedType" {
+				t.Fatalf("unknown type")
+			}
+		}
+
+		if v, ok := data[0].(*FirstMixedType); ok {
+			if v.Field10[0] != 1111111111111.11 {
+				t.Fatalf("data should be euqal")
+			}
+		} else {
+			t.Fatalf("FirstMixedType conversion failed")
+		}
+
+	}
+
+	// Find Id
+	if total, _, result, err := db.FindId("ThirdMixedType", 0); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if total != 1 {
+			t.Fatalf("Total result should be 1")
+		}
+
+		if result[0].Id != "3" {
+			t.Fatalf("Id be 3")
+		}
+	}
+
+	// Facet search
+	if _, data, err := db.FacetSearch([]FaceInput{{FacetName: "Types", QueryInput: "mixed_type", FacetLimit: 10}}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		//t.Errorf("%v", data)
+		//t.Errorf("%v", len(data["Types"]))
+		if len(data["Types"]) != 4 {
+			t.Fatalf("Facet types should be 4")
+		}
+	}
+
+	// Facet search
+	if _, data, err := db.FacetSearch([]FaceInput{{FacetName: "Types", QueryInput: "mixed_type", FacetLimit: 1}}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		//t.Errorf("%v", data)
+		//t.Errorf("%v", len(data["Types"]))
+		if len(data["Types"]) != 3 {
+			t.Fatalf("Facet types should be 3")
+		}
+	}
+
+	// BleveComplex Search
+	sortBy := []string{"-id"}
+	queryType := "QueryString"
+	limit := 10
+	fields := []string{"*"}
+	if result, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, queryType, 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	} else {
+		if result.Total != 1 {
+			t.Fatalf("result should be one")
+		}
+	}
+
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "FuzzyQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "MatchAllQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "MatchQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "MatchPhraseQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "RegexpQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "TermQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "WildcardQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "PrefixQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	//Complex Search
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "QueryString", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "FuzzyQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "MatchAllQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "MatchQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "MatchPhraseQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "RegexpQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "TermQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "WildcardQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "PrefixQuery", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "", 0, limit); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Close the database
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
 }
