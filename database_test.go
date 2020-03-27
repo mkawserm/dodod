@@ -1229,32 +1229,123 @@ type FirstMixedType struct {
 	Field3 int64     `json:"field_3"`
 	Field4 float64   `json:"field_4"`
 	Field5 bool      `json:"field_5"`
-	Field6 []byte    `json:"field_6"`
-	Field7 time.Time `json:"field_7"`
+	Field6 time.Time `json:"field_6"`
+
+	Field7  []byte    `json:"field_7"`
+	Field8  []string  `json:"field_8"`
+	Field9  []int64   `json:"field_9"`
+	Field10 []float64 `json:"field_10"`
+}
+
+func (m *FirstMixedType) Type() string {
+	return "FirstMixedType"
+}
+
+func (m *FirstMixedType) GetId() string {
+	return m.Id
 }
 
 type SecondMixedType struct {
 	Id        string `json:"id"`
 	MixedType string `json:"mixed_type"`
 
-	Field8  string    `json:"field_8"`
-	Field9  string    `json:"field_9"`
-	Field10 int64     `json:"field_10"`
-	Field11 float64   `json:"field_11"`
-	Field12 bool      `json:"field_12"`
-	Field13 []byte    `json:"field_13"`
-	Field14 time.Time `json:"field_14"`
+	Field11 string    `json:"field_11"`
+	Field12 string    `json:"field_12"`
+	Field13 int64     `json:"field_13"`
+	Field14 float64   `json:"field_14"`
+	Field15 bool      `json:"field_15"`
+	Field16 time.Time `json:"field_16"`
+
+	Field17 []byte    `json:"field_17"`
+	Field18 []string  `json:"field_18"`
+	Field19 []int64   `json:"field_19"`
+	Field20 []float64 `json:"field_20"`
+}
+
+func (m *SecondMixedType) Type() string {
+	return "SecondMixedType"
+}
+
+func (m *SecondMixedType) GetId() string {
+	return m.Id
 }
 
 type ThirdMixedType struct {
 	Id        string `json:"id"`
 	MixedType string `json:"mixed_type"`
 
-	Field15 string    `json:"field_15"`
-	Field16 string    `json:"field_16"`
-	Field17 int64     `json:"field_17"`
-	Field18 float64   `json:"field_18"`
-	Field19 bool      `json:"field_19"`
-	Field20 []byte    `json:"field_20"`
-	Field21 time.Time `json:"field_21"`
+	Field21 string    `json:"field_21"`
+	Field22 string    `json:"field_22"`
+	Field23 int64     `json:"field_23"`
+	Field24 float64   `json:"field_24"`
+	Field25 bool      `json:"field_25"`
+	Field26 time.Time `json:"field_26"`
+
+	Field27 []byte    `json:"field_27"`
+	Field28 []string  `json:"field_28"`
+	Field29 []int64   `json:"field_29"`
+	Field30 []float64 `json:"field_30"`
+}
+
+func (m *ThirdMixedType) Type() string {
+	return "ThirdMixedType"
+}
+
+func (m *ThirdMixedType) GetId() string {
+	return m.Id
+}
+
+func createTestData() (documentTypes []interface{}, testData []interface{}) {
+	documentTypes = []interface{}{
+		&FirstMixedType{},
+		&SecondMixedType{},
+		&ThirdMixedType{},
+	}
+
+	testData = []interface{}{
+		&FirstMixedType{
+			Id:        "1",
+			MixedType: "FirstMixedType",
+			Field1:    "FMTF 1",
+			Field2:    "FMTF 2",
+			Field3:    13,
+			Field4:    14.1,
+			Field5:    true,
+			Field6:    time.Now(),
+			Field7:    []byte{1, 2, 3, 4, 5},
+			Field8:    []string{"1", "2", "3"},
+			Field9:    []int64{111111111111111, 211111111111122, 311111111111133},
+			Field10:   []float64{1111111111111.11, 2111111111111.22, 3111111111111.33},
+		},
+		&SecondMixedType{
+			Id:        "2",
+			MixedType: "SecondMixedType",
+			Field11:   "SMTF 11",
+			Field12:   "SMTF 12",
+			Field13:   213,
+			Field14:   214.2,
+			Field15:   false,
+			Field16:   time.Now(),
+			Field17:   []byte{21, 22, 23, 24, 25},
+			Field18:   []string{"21", "22", "23"},
+			Field19:   []int64{211111111111111, 311111111111122, 411111111111133},
+			Field20:   []float64{2111111111111.11, 3111111111111.22, 4111111111111.33},
+		},
+		&ThirdMixedType{
+			Id:        "3",
+			MixedType: "ThirdMixedType",
+			Field21:   "TMTF 21",
+			Field22:   "TMTF 22",
+			Field23:   323,
+			Field24:   324.3,
+			Field25:   true,
+			Field26:   time.Now(),
+			Field27:   []byte{31, 32, 33, 34, 35},
+			Field28:   []string{"31", "32", "33"},
+			Field29:   []int64{311111111111111, 411111111111122, 511111111111133},
+			Field30:   []float64{3111111111111.11, 4111111111111.22, 5111111111111.33},
+		},
+	}
+
+	return
 }
