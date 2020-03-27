@@ -660,7 +660,7 @@ func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
 	db.SetDbPassword(dbPassword)
 	db.SetDbPath(dbPath)
 
-	if err := db.AddDocument([]interface{}{&MyTestDocument{
+	if err := db.CreateDocument([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != ErrDatabaseIsNotOpen {
@@ -691,7 +691,7 @@ func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
 		t.Fatalf("database should be ready")
 	}
 
-	if err := db.AddDocument([]interface{}{&MyTestDocument{
+	if err := db.CreateDocument([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != nil {

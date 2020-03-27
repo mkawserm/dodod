@@ -15,6 +15,19 @@ type Search interface {
 		err error)
 }
 
+type IdMatch struct {
+	Id    string  `json:"id"`
+	Score float64 `json:"score"`
+}
+
+type FindId interface {
+	FindId(queryInput string, offset int) (
+		total uint64,
+		queryTime time.Duration,
+		result []*IdMatch,
+		err error)
+}
+
 type ComplexSearch interface {
 	ComplexSearch(
 		queryInput string,

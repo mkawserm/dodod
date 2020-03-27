@@ -49,7 +49,7 @@ type Database struct {
 	isDbReady           bool
 
 	fieldsRegistryCache   map[string]string
-	documentRegistryCache map[string]Document
+	documentRegistryCache map[string]interface{}
 
 	internalSearchResultLimit int
 	internalIndex             bleve.Index
@@ -69,7 +69,7 @@ func (db *Database) initAll() {
 	}
 
 	if db.documentRegistryCache == nil {
-		db.documentRegistryCache = make(map[string]Document)
+		db.documentRegistryCache = make(map[string]interface{})
 	}
 }
 
@@ -246,6 +246,10 @@ func (db *Database) GetRegisteredFields() []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+func (db *Database) GetRegisteredDocument() map[string]interface{} {
+	return db.documentRegistryCache
 }
 
 func (db *Database) IsDatabaseReady() bool {
@@ -494,7 +498,7 @@ func (db *Database) Delete(data []interface{}) error {
 	return nil
 }
 
-func (db *Database) AddDocument(data []interface{}) error {
+func (db *Database) CreateDocument(data []interface{}) error {
 	if !db.IsDatabaseReady() {
 		return ErrDatabaseIsNotOpen
 	}
@@ -821,6 +825,34 @@ func (db *Database) Search(queryInput string, offset int) (total uint64,
 	elapsed := time.Now().Sub(start)
 
 	return total, queryTime + elapsed, result, err
+}
+
+func (db *Database) FindId(queryInput string, offset int) (total uint64,
+	queryTime time.Duration,
+	result []*IdMatch, err error) {
+
+	q := bleve.NewQueryStringQuery(queryInput)
+	searchRequest := bleve.NewSearchRequest(q)
+	searchRequest.From = offset
+	searchRequest.Size = db.internalSearchResultLimit
+	//searchRequest.Fields = db.GetRegisteredFields()
+
+	var searchResult *bleve.SearchResult
+	searchResult, err = db.internalIndex.Search(searchRequest)
+	if err != nil {
+		return
+	}
+
+	queryTime = searchResult.Took
+	total = searchResult.Total
+
+	result = make([]*IdMatch, len(searchResult.Hits), len(searchResult.Hits))
+
+	for i, v := range searchResult.Hits {
+		result[i] = &IdMatch{Id: v.ID, Score: v.Score}
+	}
+
+	return total, queryTime, result, err
 }
 
 func (db *Database) FacetSearch(facetInput []FaceInput) (queryTime time.Duration,

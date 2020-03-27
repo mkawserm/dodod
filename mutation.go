@@ -9,7 +9,7 @@ type Mutation interface {
 	UpdateIndex(data []interface{}) error
 	DeleteIndex(data []interface{}) error
 
-	AddDocument(data []interface{}) error
+	CreateDocument(data []interface{}) error
 	UpdateDocument(data []interface{}) error
 	DeleteDocument(data []interface{}) error
 }
