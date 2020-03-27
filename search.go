@@ -31,6 +31,7 @@ type FindId interface {
 type ComplexSearch interface {
 	ComplexSearch(
 		queryInput string,
+		fields []string,
 		sortBy []string,
 		queryType string,
 		offset int, limit int) (
@@ -38,6 +39,13 @@ type ComplexSearch interface {
 		queryTime time.Duration,
 		result []interface{},
 		err error)
+
+	BleveComplexSearch(
+		queryInput string,
+		fields []string,
+		sortBy []string,
+		queryType string,
+		offset int, limit int) (*bleve.SearchResult, error)
 }
 
 type BleveSearch interface {

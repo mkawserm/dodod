@@ -57,6 +57,10 @@ type Database struct {
 	internalIndexStoreName    string
 }
 
+func (db *Database) GetInternalDatabase() *badger.DB {
+	return db.internalDb
+}
+
 func (db *Database) initAll() {
 	db.internalSearchResultLimit = 20
 
@@ -901,11 +905,11 @@ func (db *Database) FacetSearch(facetInput []FaceInput) (queryTime time.Duration
 	return
 }
 
-func (db *Database) ComplexSearch(queryInput string, sortBy []string, queryType string, offset int, limit int) (
-	total uint64,
-	queryTime time.Duration,
-	result []interface{},
-	err error) {
+func (db *Database) ComplexSearch(queryInput string,
+	fields []string,
+	sortBy []string,
+	queryType string,
+	offset int, limit int) (total uint64, queryTime time.Duration, result []interface{}, err error) {
 
 	var q query.Query
 
@@ -938,7 +942,7 @@ func (db *Database) ComplexSearch(queryInput string, sortBy []string, queryType 
 	searchRequest.From = offset
 	searchRequest.Size = limit
 	searchRequest.SortBy(sortBy)
-	//searchRequest.Fields = db.GetRegisteredFields()
+	searchRequest.Fields = fields
 
 	var searchResult *bleve.SearchResult
 	searchResult, err = db.internalIndex.Search(searchRequest)
@@ -964,6 +968,44 @@ func (db *Database) ComplexSearch(queryInput string, sortBy []string, queryType 
 	elapsed := time.Now().Sub(start)
 
 	return total, queryTime + elapsed, result, err
+}
+
+func (db *Database) BleveComplexSearch(queryInput string,
+	fields []string,
+	sortBy []string,
+	queryType string,
+	offset int,
+	limit int) (*bleve.SearchResult, error) {
+	var q query.Query
+
+	if queryType == "QueryString" {
+		q = bleve.NewQueryStringQuery(queryInput)
+	} else if queryType == "FuzzyQuery" {
+		q = bleve.NewFuzzyQuery(queryInput)
+	} else if queryType == "MatchAllQuery" {
+		q = bleve.NewMatchAllQuery()
+	} else if queryType == "MatchQuery" {
+		q = bleve.NewMatchQuery(queryInput)
+	} else if queryType == "MatchPhraseQuery" {
+		q = bleve.NewMatchPhraseQuery(queryInput)
+	} else if queryType == "RegexpQuery" {
+		q = bleve.NewRegexpQuery(queryInput)
+	} else if queryType == "TermQuery" {
+		q = bleve.NewTermQuery(queryInput)
+	} else if queryType == "WildcardQuery" {
+		q = bleve.NewWildcardQuery(queryInput)
+	} else if queryType == "PrefixQuery" {
+		q = bleve.NewPrefixQuery(queryInput)
+	} else {
+		q = bleve.NewQueryStringQuery(queryInput)
+	}
+
+	searchRequest := bleve.NewSearchRequest(q)
+	searchRequest.From = offset
+	searchRequest.Size = limit
+	searchRequest.SortBy(sortBy)
+	searchRequest.Fields = fields
+	return db.internalIndex.Search(searchRequest)
 }
 
 func (db *Database) BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error) {

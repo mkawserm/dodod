@@ -1132,8 +1132,9 @@ func TestDatabase_ComplexSearch(t *testing.T) {
 	sortBy := []string{"-id"}
 	queryType := "QueryString"
 	limit := 10
+	fields := []string{"*"}
 
-	if total, _, result, err := db.ComplexSearch("value", sortBy, queryType, 0, limit); err != nil {
+	if total, _, result, err := db.ComplexSearch("value", fields, sortBy, queryType, 0, limit); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if len(result) != 10 {
@@ -1157,7 +1158,7 @@ func TestDatabase_ComplexSearch(t *testing.T) {
 		//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
 	}
 
-	if total, _, result, err := db.ComplexSearch("value", sortBy, queryType, 5, limit); err != nil {
+	if total, _, result, err := db.ComplexSearch("value", fields, sortBy, queryType, 5, limit); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if len(result) != 9 {
