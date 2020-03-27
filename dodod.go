@@ -5,6 +5,8 @@ type Dodod interface {
 	Mutation
 
 	Search
+	FindId
+
 	FacetSearch
 	ComplexSearch
 
