@@ -10,6 +10,7 @@ type Dodod interface {
 	FacetSearch
 	SimpleSearch
 	ComplexSearch
+	BleveSearch
 
 	DocumentRegistry
 }
