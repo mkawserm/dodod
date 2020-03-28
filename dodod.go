@@ -8,6 +8,7 @@ type Dodod interface {
 	FindId
 
 	FacetSearch
+	SimpleSearch
 	ComplexSearch
 
 	DocumentRegistry
