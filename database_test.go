@@ -941,7 +941,7 @@ func TestDatabase_Search(t *testing.T) {
 
 	// Now search data
 
-	if total, _, result, err := db.Search("value", 0); err != nil {
+	if total, _, result, err := db.SimpleSearch("value", 0); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if len(result) != 5 {
@@ -964,7 +964,7 @@ func TestDatabase_Search(t *testing.T) {
 		//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
 	}
 
-	if total, _, result, err := db.Search("value", 5); err != nil {
+	if total, _, result, err := db.SimpleSearch("value", 5); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if len(result) != 5 {
@@ -987,7 +987,7 @@ func TestDatabase_Search(t *testing.T) {
 		//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
 	}
 
-	if total, _, result, err := db.Search("value", 10); err != nil {
+	if total, _, result, err := db.SimpleSearch("value", 10); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if len(result) != 4 {
@@ -1010,7 +1010,7 @@ func TestDatabase_Search(t *testing.T) {
 		//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
 	}
 
-	if total, _, result, err := db.Search("value", 15); err != nil {
+	if total, _, result, err := db.SimpleSearch("value", 15); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if len(result) != 0 {
@@ -1485,7 +1485,7 @@ func TestDatabaseTable(t *testing.T) {
 		}
 	}
 
-	// BleveComplex Search
+	// BleveComplex SimpleSearch
 	sortBy := []string{"-id"}
 	queryType := "QueryString"
 	limit := 10
@@ -1526,7 +1526,7 @@ func TestDatabaseTable(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	//Complex Search
+	//Complex SimpleSearch
 	if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "QueryString", 0, limit); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

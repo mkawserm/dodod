@@ -8,7 +8,11 @@ import (
 import "github.com/blevesearch/bleve"
 
 type Search interface {
-	Search(queryInput string, offset int) (
+	Search(input map[string]interface{}) (output map[string]interface{}, err error)
+}
+
+type SimpleSearch interface {
+	SimpleSearch(queryInput string, offset int) (
 		total uint64,
 		queryTime time.Duration,
 		result []interface{},
@@ -56,16 +60,16 @@ type BleveSearch interface {
 		req *bleve.SearchRequest) (*bleve.SearchResult, error)
 }
 
-type FacetInput struct {
-	FacetName  string `json:"facetName"`
-	QueryInput string `json:"queryInput"`
-	FacetLimit int    `json:"facetLimit"`
-}
-
-type FacetOutput struct {
-	TermName  string `json:"termName"`
-	TermCount int    `json:"termCount"`
-}
+//type FacetInput struct {
+//	FacetName  string `json:"facetName"`
+//	QueryInput string `json:"queryInput"`
+//	FacetLimit int    `json:"facetLimit"`
+//}
+//
+//type FacetOutput struct {
+//	TermName  string `json:"termName"`
+//	TermCount int    `json:"termCount"`
+//}
 
 type FacetSearch interface {
 	FacetSearch(facetInput []map[string]interface{}) (
