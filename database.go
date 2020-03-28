@@ -795,9 +795,255 @@ func (db *Database) DeleteIndex(data []interface{}) error {
 }
 
 // Search using the input params into the index store
-func (db *Database) Search(input map[string]interface{}) (output map[string]interface{}, err error) {
+func (db *Database) Search(input map[string]interface{}, outputType string) (interface{}, error) {
 
-	return
+	var bleveQuery query.Query
+
+	if val, valOk := input["query"].(map[string]interface{}); valOk {
+		p := map[string]interface{}{}
+		if pVal, pOk := val["p"].(map[string]interface{}); pOk && pVal != nil {
+			p = pVal
+		}
+
+		if name, ok := val["name"].(string); ok {
+
+			// Switch to bleveQuery type
+			switch name {
+
+			case "QueryString":
+				if q, qFound := p["q"].(string); qFound {
+					queryStringQuery := bleve.NewQueryStringQuery(q)
+
+					bleveQuery = queryStringQuery
+				}
+
+			case "Fuzzy":
+				if term, termFound := p["term"].(string); termFound {
+					fuzzyQuery := bleve.NewFuzzyQuery(term)
+
+					bleveQuery = fuzzyQuery
+				}
+
+			case "Regexp":
+				if regexp, regexpFound := p["regexp"].(string); regexpFound {
+					regexpQuery := bleve.NewRegexpQuery(regexp)
+
+					bleveQuery = regexpQuery
+				}
+
+			case "Term":
+				if term, termFound := p["term"].(string); termFound {
+					termQuery := bleve.NewTermQuery(term)
+
+					bleveQuery = termQuery
+				}
+
+			case "MatchPhrase":
+				if matchPhrase, matchPhraseFound := p["match_phrase"].(string); matchPhraseFound {
+					matchPhraseQuery := bleve.NewMatchPhraseQuery(matchPhrase)
+
+					bleveQuery = matchPhraseQuery
+				}
+
+			case "Match":
+				if match, matchFound := p["match"].(string); matchFound {
+					matchQuery := bleve.NewMatchQuery(match)
+
+					bleveQuery = matchQuery
+				}
+
+			case "Prefix":
+				if prefix, prefixFound := p["prefix"].(string); prefixFound {
+					prefixQuery := bleve.NewPrefixQuery(prefix)
+
+					bleveQuery = prefixQuery
+				}
+
+			case "Wildcard":
+				if wildcard, wildcardFound := p["wildcard"].(string); wildcardFound {
+					wildcardQuery := bleve.NewWildcardQuery(wildcard)
+
+					bleveQuery = wildcardQuery
+				}
+
+			}
+			// Switch end
+		}
+	}
+
+	if bleveQuery == nil {
+		bleveQuery = bleve.NewMatchAllQuery()
+	}
+
+	searchRequest := bleve.NewSearchRequest(bleveQuery)
+
+	if size, ok := input["size"].(int); ok {
+		searchRequest.Size = size
+	}
+	if from, ok := input["from"].(int); ok {
+		searchRequest.From = from
+	}
+	if fields, ok := input["fields"].([]string); ok {
+		searchRequest.Fields = fields
+	}
+	if explain, ok := input["explain"].(bool); ok {
+		searchRequest.Explain = explain
+	}
+	if sort, ok := input["sort"].([]string); ok {
+		searchRequest.SortBy(sort)
+	}
+	if includeLocations, ok := input["include_locations"].(bool); ok {
+		searchRequest.IncludeLocations = includeLocations
+	}
+	if score, ok := input["score"].(string); ok {
+		searchRequest.Score = score
+	}
+	if searchAfter, ok := input["search_after"].([]string); ok {
+		searchRequest.SearchAfter = searchAfter
+	}
+	if searchBefore, ok := input["search_before"].([]string); ok {
+		searchRequest.SearchBefore = searchBefore
+	}
+
+	if highlight, highlightFound := input["highlight"].(map[string]interface{}); highlightFound {
+		if style, styleFound := highlight["style"].(string); styleFound {
+			if fields, fieldsFound := highlight["fields"].([]string); fieldsFound {
+				searchRequest.Highlight = bleve.NewHighlight()
+				searchRequest.Highlight.Style = &style
+				searchRequest.Highlight.Fields = fields
+			}
+		}
+	}
+
+	// facets section
+	if facets, facetsFound := input["facets"].([]interface{}); facetsFound {
+
+		for _, singleFacetInterface := range facets {
+			singleFacet := map[string]interface{}{}
+
+			if v, ok := singleFacetInterface.(map[string]interface{}); ok {
+				singleFacet = v
+			}
+
+			if name, nameFound := singleFacet["name"].(string); nameFound {
+				if field, fieldFound := singleFacet["field"].(string); fieldFound {
+					if size, sizeFound := singleFacet["size"].(int); sizeFound {
+						facetRequest := bleve.NewFacetRequest(field, size)
+
+						if dateTimeRangeList, dateTimeRangeListFound := singleFacet["date_time_range"].([]interface{}); dateTimeRangeListFound {
+							for _, dateTimeRangeInterface := range dateTimeRangeList {
+								dateTimeRange := map[string]string{}
+								if v, ok := dateTimeRangeInterface.(map[string]string); ok {
+									dateTimeRange = v
+								}
+
+								dateTimeRangeName := ""
+								dateTimeRangeStart := ""
+								dateTimeRangeEnd := ""
+								if v, found := dateTimeRange["name"]; found {
+									dateTimeRangeName = v
+								}
+								if v, found := dateTimeRange["start"]; found {
+									dateTimeRangeStart = v
+								}
+								if v, found := dateTimeRange["end"]; found {
+									dateTimeRangeEnd = v
+								}
+								if dateTimeRangeName != "" {
+									facetRequest.AddDateTimeRangeString(dateTimeRangeName,
+										&dateTimeRangeStart,
+										&dateTimeRangeEnd)
+								}
+
+							}
+						}
+
+						if numericRangeList, numericRangeListFound := singleFacet["numeric_range"].([]interface{}); numericRangeListFound {
+							for _, numericRangeInterface := range numericRangeList {
+
+								numericRange := map[string]interface{}{}
+								if v, ok := numericRangeInterface.(map[string]interface{}); ok {
+									numericRange = v
+								}
+
+								numericRangeName := ""
+								var numericRangeMin float64
+								var numericRangeMax float64
+
+								if v, found := numericRange["name"].(string); found {
+									numericRangeName = v
+								}
+								if v, found := numericRange["min"].(float64); found {
+									numericRangeMin = v
+								}
+								if v, found := numericRange["max"].(float64); found {
+									numericRangeMax = v
+								}
+
+								if numericRangeName != "" {
+									facetRequest.AddNumericRange(numericRangeName,
+										&numericRangeMin,
+										&numericRangeMax)
+								}
+
+							}
+						}
+
+						searchRequest.AddFacet(name, facetRequest)
+					}
+				}
+			}
+		}
+	}
+
+	searchResult, err := db.internalIndex.Search(searchRequest)
+	if err != nil {
+		return nil, err
+	}
+
+	switch outputType {
+	case "bytes":
+		output, err := json.Marshal(searchResult)
+		return output, err
+
+	case "map":
+		//output := structToMap(searchResult)
+		output := map[string]interface{}{}
+		data, _ := json.Marshal(searchResult)
+		err := json.Unmarshal(data, &output)
+		return output, err
+
+	case "map_with_data":
+		//output := structToMap(searchResult)
+		output := map[string]interface{}{}
+		data, _ := json.Marshal(searchResult)
+		err := json.Unmarshal(data, &output)
+
+		if hitsList, ok := output["hits"].([]interface{}); hitsList != nil && ok {
+			for _, hitInterface := range hitsList {
+				if hit, hitFound := hitInterface.(map[string]interface{}); hitFound {
+					if id, idFound := hit["id"].(string); id != "" && idFound {
+						if total, data, readError := db.Read([]string{id}); readError == nil {
+							if total == 1 && len(data) == 1 {
+								hit["data"] = data[0]
+							}
+						}
+					}
+				}
+			}
+		}
+
+		//data, _ = json.Marshal(output)
+		//err = json.Unmarshal(data, &output)
+
+		return output, err
+
+	case "bleveSearchResult":
+		return searchResult, err
+
+	default:
+		return searchResult, err
+	}
 }
 
 func (db *Database) SimpleSearch(queryInput string, offset int) (total uint64,

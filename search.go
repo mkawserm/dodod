@@ -12,7 +12,7 @@ import "github.com/blevesearch/bleve"
 // Implementation must strictly follow input and output guide
 type Search interface {
 	// Search using the input map and output a map of result and error
-	Search(input map[string]interface{}) (output map[string]interface{}, err error)
+	Search(input map[string]interface{}, outputType string) (output interface{}, err error)
 }
 
 // SimpleSearch basic interface
