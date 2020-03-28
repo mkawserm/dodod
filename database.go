@@ -1013,7 +1013,7 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 		err := json.Unmarshal(data, &output)
 		return output, err
 
-	case "map_with_data":
+	case "mapIncludeData":
 		//output := structToMap(searchResult)
 		output := map[string]interface{}{}
 		data, _ := json.Marshal(searchResult)

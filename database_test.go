@@ -1562,13 +1562,13 @@ func TestDatabaseTable(t *testing.T) {
 	input := make(map[string]interface{})
 	input["sort"] = []string{"_id"}
 	//input["fields"] = []string{"*"}
-	if data, err := db.Search(input, "map_with_data"); err != nil {
+
+	if data, err := db.Search(input, "mapIncludeData"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if data == nil {
 			t.Fatalf("data should not be nil")
 		}
-
 		//output, _ := json.Marshal(data)
 		//t.Errorf("%v", data)
 	}
