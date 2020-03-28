@@ -1046,218 +1046,218 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 	}
 }
 
-func (db *Database) SimpleSearch(queryInput string, offset int) (total uint64,
-	queryTime time.Duration,
-	result []interface{},
-	err error) {
+//func (db *Database) SimpleSearch(queryInput string, offset int) (total uint64,
+//	queryTime time.Duration,
+//	result []interface{},
+//	err error) {
+//
+//	q := bleve.NewQueryStringQuery(queryInput)
+//	searchRequest := bleve.NewSearchRequest(q)
+//	searchRequest.From = offset
+//	searchRequest.Size = db.internalSearchResultLimit
+//	//searchRequest.Fields = db.GetRegisteredFields()
+//
+//	var searchResult *bleve.SearchResult
+//	searchResult, err = db.internalIndex.Search(searchRequest)
+//	if err != nil {
+//		return
+//	}
+//
+//	queryTime = searchResult.Took
+//	total = searchResult.Total
+//
+//	idList := make([]string, len(searchResult.Hits), len(searchResult.Hits))
+//
+//	for i, v := range searchResult.Hits {
+//		idList[i] = v.ID
+//	}
+//
+//	start := time.Now()
+//	if _, data, err := db.Read(idList); err != nil {
+//		return 0, 0, nil, err
+//	} else {
+//		result = data
+//	}
+//	elapsed := time.Now().Sub(start)
+//
+//	return total, queryTime + elapsed, result, err
+//}
 
-	q := bleve.NewQueryStringQuery(queryInput)
-	searchRequest := bleve.NewSearchRequest(q)
-	searchRequest.From = offset
-	searchRequest.Size = db.internalSearchResultLimit
-	//searchRequest.Fields = db.GetRegisteredFields()
+//func (db *Database) FindId(queryInput string, offset int) (total uint64,
+//	queryTime time.Duration,
+//	result []*IdMatch, err error) {
+//
+//	q := bleve.NewQueryStringQuery(queryInput)
+//	searchRequest := bleve.NewSearchRequest(q)
+//	searchRequest.From = offset
+//	searchRequest.Size = db.internalSearchResultLimit
+//	//searchRequest.Fields = db.GetRegisteredFields()
+//
+//	var searchResult *bleve.SearchResult
+//	searchResult, err = db.internalIndex.Search(searchRequest)
+//	if err != nil {
+//		return
+//	}
+//
+//	queryTime = searchResult.Took
+//	total = searchResult.Total
+//
+//	result = make([]*IdMatch, len(searchResult.Hits), len(searchResult.Hits))
+//
+//	for i, v := range searchResult.Hits {
+//		result[i] = &IdMatch{Id: v.ID, Score: v.Score}
+//	}
+//
+//	return total, queryTime, result, err
+//}
 
-	var searchResult *bleve.SearchResult
-	searchResult, err = db.internalIndex.Search(searchRequest)
-	if err != nil {
-		return
-	}
+//func (db *Database) FacetSearch(facetInput []map[string]interface{}) (queryTime time.Duration,
+//	data map[string][]map[string]interface{},
+//	err error) {
+//
+//	q := bleve.NewMatchAllQuery()
+//	searchRequest := bleve.NewSearchRequest(q)
+//	searchRequest.Size = 0
+//	for _, fi := range facetInput {
+//		facetName := fi["facetName"].(string)
+//		queryInput := fi["queryInput"].(string)
+//		facetLimit := fi["facetLimit"].(int)
+//
+//		searchRequest.AddFacet(facetName, bleve.NewFacetRequest(queryInput, facetLimit))
+//	}
+//
+//	var searchResult *bleve.SearchResult
+//	searchResult, err = db.internalIndex.Search(searchRequest)
+//	if err != nil {
+//		return
+//	}
+//
+//	queryTime = searchResult.Took
+//
+//	if len(searchResult.Facets) > 0 {
+//		data = make(map[string][]map[string]interface{})
+//		for fn, f := range searchResult.Facets {
+//			data[fn] = make([]map[string]interface{}, 0, len(f.Terms)+1)
+//			data[fn] = append(data[fn], map[string]interface{}{"termName": fn, "termCount": f.Total})
+//			//data[fn] = append(data[fn], FacetOutput{TermName: fn, TermCount: f.Total})
+//
+//			for _, t := range f.Terms {
+//				fo := map[string]interface{}{"termName": t.Term, "termCount": t.Count}
+//				data[fn] = append(data[fn], fo)
+//			}
+//
+//			if f.Other != 0 {
+//				fo := map[string]interface{}{"termName": "dodod::others", "termCount": f.Other}
+//				data[fn] = append(data[fn], fo)
+//			}
+//		}
+//	}
+//
+//	return
+//}
 
-	queryTime = searchResult.Took
-	total = searchResult.Total
+//func (db *Database) ComplexSearch(queryInput string,
+//	fields []string,
+//	sortBy []string,
+//	queryType string,
+//	offset int, limit int) (total uint64, queryTime time.Duration, result []interface{}, err error) {
+//
+//	var q query.Query
+//
+//	if queryType == "QueryString" {
+//		q = bleve.NewQueryStringQuery(queryInput)
+//	} else if queryType == "FuzzyQuery" {
+//		q = bleve.NewFuzzyQuery(queryInput)
+//	} else if queryType == "MatchAllQuery" {
+//		q = bleve.NewMatchAllQuery()
+//	} else if queryType == "MatchQuery" {
+//		q = bleve.NewMatchQuery(queryInput)
+//	} else if queryType == "MatchPhraseQuery" {
+//		q = bleve.NewMatchPhraseQuery(queryInput)
+//	} else if queryType == "RegexpQuery" {
+//		q = bleve.NewRegexpQuery(queryInput)
+//	} else if queryType == "TermQuery" {
+//		q = bleve.NewTermQuery(queryInput)
+//	} else if queryType == "WildcardQuery" {
+//		q = bleve.NewWildcardQuery(queryInput)
+//	} else if queryType == "PrefixQuery" {
+//		q = bleve.NewPrefixQuery(queryInput)
+//	} else {
+//		q = bleve.NewQueryStringQuery(queryInput)
+//	}
+//	//else if queryType == "PhraseQuery" {
+//	//	q = bleve.NewPhraseQuery(queryInput)
+//	//}
+//
+//	searchRequest := bleve.NewSearchRequest(q)
+//	searchRequest.From = offset
+//	searchRequest.Size = limit
+//	searchRequest.SortBy(sortBy)
+//	searchRequest.Fields = fields
+//
+//	var searchResult *bleve.SearchResult
+//	searchResult, err = db.internalIndex.Search(searchRequest)
+//	if err != nil {
+//		return
+//	}
+//
+//	queryTime = searchResult.Took
+//	total = searchResult.Total
+//
+//	idList := make([]string, len(searchResult.Hits), len(searchResult.Hits))
+//
+//	for i, v := range searchResult.Hits {
+//		idList[i] = v.ID
+//	}
+//
+//	start := time.Now()
+//	if _, data, err := db.Read(idList); err != nil {
+//		return 0, 0, nil, err
+//	} else {
+//		result = data
+//	}
+//	elapsed := time.Now().Sub(start)
+//
+//	return total, queryTime + elapsed, result, err
+//}
 
-	idList := make([]string, len(searchResult.Hits), len(searchResult.Hits))
-
-	for i, v := range searchResult.Hits {
-		idList[i] = v.ID
-	}
-
-	start := time.Now()
-	if _, data, err := db.Read(idList); err != nil {
-		return 0, 0, nil, err
-	} else {
-		result = data
-	}
-	elapsed := time.Now().Sub(start)
-
-	return total, queryTime + elapsed, result, err
-}
-
-func (db *Database) FindId(queryInput string, offset int) (total uint64,
-	queryTime time.Duration,
-	result []*IdMatch, err error) {
-
-	q := bleve.NewQueryStringQuery(queryInput)
-	searchRequest := bleve.NewSearchRequest(q)
-	searchRequest.From = offset
-	searchRequest.Size = db.internalSearchResultLimit
-	//searchRequest.Fields = db.GetRegisteredFields()
-
-	var searchResult *bleve.SearchResult
-	searchResult, err = db.internalIndex.Search(searchRequest)
-	if err != nil {
-		return
-	}
-
-	queryTime = searchResult.Took
-	total = searchResult.Total
-
-	result = make([]*IdMatch, len(searchResult.Hits), len(searchResult.Hits))
-
-	for i, v := range searchResult.Hits {
-		result[i] = &IdMatch{Id: v.ID, Score: v.Score}
-	}
-
-	return total, queryTime, result, err
-}
-
-func (db *Database) FacetSearch(facetInput []map[string]interface{}) (queryTime time.Duration,
-	data map[string][]map[string]interface{},
-	err error) {
-
-	q := bleve.NewMatchAllQuery()
-	searchRequest := bleve.NewSearchRequest(q)
-	searchRequest.Size = 0
-	for _, fi := range facetInput {
-		facetName := fi["facetName"].(string)
-		queryInput := fi["queryInput"].(string)
-		facetLimit := fi["facetLimit"].(int)
-
-		searchRequest.AddFacet(facetName, bleve.NewFacetRequest(queryInput, facetLimit))
-	}
-
-	var searchResult *bleve.SearchResult
-	searchResult, err = db.internalIndex.Search(searchRequest)
-	if err != nil {
-		return
-	}
-
-	queryTime = searchResult.Took
-
-	if len(searchResult.Facets) > 0 {
-		data = make(map[string][]map[string]interface{})
-		for fn, f := range searchResult.Facets {
-			data[fn] = make([]map[string]interface{}, 0, len(f.Terms)+1)
-			data[fn] = append(data[fn], map[string]interface{}{"termName": fn, "termCount": f.Total})
-			//data[fn] = append(data[fn], FacetOutput{TermName: fn, TermCount: f.Total})
-
-			for _, t := range f.Terms {
-				fo := map[string]interface{}{"termName": t.Term, "termCount": t.Count}
-				data[fn] = append(data[fn], fo)
-			}
-
-			if f.Other != 0 {
-				fo := map[string]interface{}{"termName": "dodod::others", "termCount": f.Other}
-				data[fn] = append(data[fn], fo)
-			}
-		}
-	}
-
-	return
-}
-
-func (db *Database) ComplexSearch(queryInput string,
-	fields []string,
-	sortBy []string,
-	queryType string,
-	offset int, limit int) (total uint64, queryTime time.Duration, result []interface{}, err error) {
-
-	var q query.Query
-
-	if queryType == "QueryString" {
-		q = bleve.NewQueryStringQuery(queryInput)
-	} else if queryType == "FuzzyQuery" {
-		q = bleve.NewFuzzyQuery(queryInput)
-	} else if queryType == "MatchAllQuery" {
-		q = bleve.NewMatchAllQuery()
-	} else if queryType == "MatchQuery" {
-		q = bleve.NewMatchQuery(queryInput)
-	} else if queryType == "MatchPhraseQuery" {
-		q = bleve.NewMatchPhraseQuery(queryInput)
-	} else if queryType == "RegexpQuery" {
-		q = bleve.NewRegexpQuery(queryInput)
-	} else if queryType == "TermQuery" {
-		q = bleve.NewTermQuery(queryInput)
-	} else if queryType == "WildcardQuery" {
-		q = bleve.NewWildcardQuery(queryInput)
-	} else if queryType == "PrefixQuery" {
-		q = bleve.NewPrefixQuery(queryInput)
-	} else {
-		q = bleve.NewQueryStringQuery(queryInput)
-	}
-	//else if queryType == "PhraseQuery" {
-	//	q = bleve.NewPhraseQuery(queryInput)
-	//}
-
-	searchRequest := bleve.NewSearchRequest(q)
-	searchRequest.From = offset
-	searchRequest.Size = limit
-	searchRequest.SortBy(sortBy)
-	searchRequest.Fields = fields
-
-	var searchResult *bleve.SearchResult
-	searchResult, err = db.internalIndex.Search(searchRequest)
-	if err != nil {
-		return
-	}
-
-	queryTime = searchResult.Took
-	total = searchResult.Total
-
-	idList := make([]string, len(searchResult.Hits), len(searchResult.Hits))
-
-	for i, v := range searchResult.Hits {
-		idList[i] = v.ID
-	}
-
-	start := time.Now()
-	if _, data, err := db.Read(idList); err != nil {
-		return 0, 0, nil, err
-	} else {
-		result = data
-	}
-	elapsed := time.Now().Sub(start)
-
-	return total, queryTime + elapsed, result, err
-}
-
-func (db *Database) BleveComplexSearch(queryInput string,
-	fields []string,
-	sortBy []string,
-	queryType string,
-	offset int,
-	limit int) (*bleve.SearchResult, error) {
-	var q query.Query
-
-	if queryType == "QueryString" {
-		q = bleve.NewQueryStringQuery(queryInput)
-	} else if queryType == "FuzzyQuery" {
-		q = bleve.NewFuzzyQuery(queryInput)
-	} else if queryType == "MatchAllQuery" {
-		q = bleve.NewMatchAllQuery()
-	} else if queryType == "MatchQuery" {
-		q = bleve.NewMatchQuery(queryInput)
-	} else if queryType == "MatchPhraseQuery" {
-		q = bleve.NewMatchPhraseQuery(queryInput)
-	} else if queryType == "RegexpQuery" {
-		q = bleve.NewRegexpQuery(queryInput)
-	} else if queryType == "TermQuery" {
-		q = bleve.NewTermQuery(queryInput)
-	} else if queryType == "WildcardQuery" {
-		q = bleve.NewWildcardQuery(queryInput)
-	} else if queryType == "PrefixQuery" {
-		q = bleve.NewPrefixQuery(queryInput)
-	} else {
-		q = bleve.NewQueryStringQuery(queryInput)
-	}
-
-	searchRequest := bleve.NewSearchRequest(q)
-	searchRequest.From = offset
-	searchRequest.Size = limit
-	searchRequest.SortBy(sortBy)
-	searchRequest.Fields = fields
-	return db.internalIndex.Search(searchRequest)
-}
+//func (db *Database) BleveComplexSearch(queryInput string,
+//	fields []string,
+//	sortBy []string,
+//	queryType string,
+//	offset int,
+//	limit int) (*bleve.SearchResult, error) {
+//	var q query.Query
+//
+//	if queryType == "QueryString" {
+//		q = bleve.NewQueryStringQuery(queryInput)
+//	} else if queryType == "FuzzyQuery" {
+//		q = bleve.NewFuzzyQuery(queryInput)
+//	} else if queryType == "MatchAllQuery" {
+//		q = bleve.NewMatchAllQuery()
+//	} else if queryType == "MatchQuery" {
+//		q = bleve.NewMatchQuery(queryInput)
+//	} else if queryType == "MatchPhraseQuery" {
+//		q = bleve.NewMatchPhraseQuery(queryInput)
+//	} else if queryType == "RegexpQuery" {
+//		q = bleve.NewRegexpQuery(queryInput)
+//	} else if queryType == "TermQuery" {
+//		q = bleve.NewTermQuery(queryInput)
+//	} else if queryType == "WildcardQuery" {
+//		q = bleve.NewWildcardQuery(queryInput)
+//	} else if queryType == "PrefixQuery" {
+//		q = bleve.NewPrefixQuery(queryInput)
+//	} else {
+//		q = bleve.NewQueryStringQuery(queryInput)
+//	}
+//
+//	searchRequest := bleve.NewSearchRequest(q)
+//	searchRequest.From = offset
+//	searchRequest.Size = limit
+//	searchRequest.SortBy(sortBy)
+//	searchRequest.Fields = fields
+//	return db.internalIndex.Search(searchRequest)
+//}
 
 func (db *Database) BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error) {
 	if !db.IsDatabaseReady() {

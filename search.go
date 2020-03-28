@@ -2,7 +2,6 @@ package dodod
 
 import (
 	"context"
-	"time"
 )
 
 import "github.com/blevesearch/bleve"
@@ -16,50 +15,50 @@ type Search interface {
 }
 
 // SimpleSearch basic interface
-type SimpleSearch interface {
-	SimpleSearch(queryInput string, offset int) (
-		total uint64,
-		queryTime time.Duration,
-		result []interface{},
-		err error)
-}
+//type SimpleSearch interface {
+//	SimpleSearch(queryInput string, offset int) (
+//		total uint64,
+//		queryTime time.Duration,
+//		result []interface{},
+//		err error)
+//}
 
 // IdMatch structure contains Id and Score
 // of the matched object
-type IdMatch struct {
-	Id    string  `json:"id"`
-	Score float64 `json:"score"`
-}
+//type IdMatch struct {
+//	Id    string  `json:"id"`
+//	Score float64 `json:"score"`
+//}
 
 // FindId basic interface
-type FindId interface {
-	FindId(queryInput string, offset int) (
-		total uint64,
-		queryTime time.Duration,
-		result []*IdMatch,
-		err error)
-}
+//type FindId interface {
+//	FindId(queryInput string, offset int) (
+//		total uint64,
+//		queryTime time.Duration,
+//		result []*IdMatch,
+//		err error)
+//}
 
 // ComplexSearch basic interface
-type ComplexSearch interface {
-	ComplexSearch(
-		queryInput string,
-		fields []string,
-		sortBy []string,
-		queryType string,
-		offset int, limit int) (
-		total uint64,
-		queryTime time.Duration,
-		result []interface{},
-		err error)
-
-	BleveComplexSearch(
-		queryInput string,
-		fields []string,
-		sortBy []string,
-		queryType string,
-		offset int, limit int) (*bleve.SearchResult, error)
-}
+//type ComplexSearch interface {
+//	ComplexSearch(
+//		queryInput string,
+//		fields []string,
+//		sortBy []string,
+//		queryType string,
+//		offset int, limit int) (
+//		total uint64,
+//		queryTime time.Duration,
+//		result []interface{},
+//		err error)
+//
+//	BleveComplexSearch(
+//		queryInput string,
+//		fields []string,
+//		sortBy []string,
+//		queryType string,
+//		offset int, limit int) (*bleve.SearchResult, error)
+//}
 
 // BleveSearch basic interface
 type BleveSearch interface {
@@ -82,9 +81,9 @@ type BleveSearch interface {
 //}
 
 // FacetSearch basic interface
-type FacetSearch interface {
-	FacetSearch(facetInput []map[string]interface{}) (
-		queryTime time.Duration,
-		data map[string][]map[string]interface{},
-		err error)
-}
+//type FacetSearch interface {
+//	FacetSearch(facetInput []map[string]interface{}) (
+//		queryTime time.Duration,
+//		data map[string][]map[string]interface{},
+//		err error)
+//}

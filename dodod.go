@@ -5,11 +5,11 @@ type Dodod interface {
 	Mutation
 
 	Search
-	FindId
+	//FindId
 
-	FacetSearch
-	SimpleSearch
-	ComplexSearch
+	//FacetSearch
+	//SimpleSearch
+	//ComplexSearch
 	BleveSearch
 
 	DocumentRegistry
