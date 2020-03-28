@@ -245,7 +245,7 @@ func TestMockOpenFailure(t *testing.T) {
 	//		t.Fatalf("unexpected error: %v", err)
 	//	}
 	//	if err := db.Close(); err != nil {
-	//		t.Fatalf("error occured while closing, error: %v", err)
+	//		t.Fatalf("error occurred while closing, error: %v", err)
 	//	}
 	//})
 
