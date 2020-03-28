@@ -794,6 +794,12 @@ func (db *Database) DeleteIndex(data []interface{}) error {
 	return db.internalIndex.Batch(batch)
 }
 
+// Search using the input params into the index store
+func (db *Database) Search(input map[string]interface{}) (output map[string]interface{}, err error) {
+
+	return
+}
+
 func (db *Database) SimpleSearch(queryInput string, offset int) (total uint64,
 	queryTime time.Duration,
 	result []interface{},
