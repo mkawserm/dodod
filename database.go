@@ -859,15 +859,19 @@ func (db *Database) FindId(queryInput string, offset int) (total uint64,
 	return total, queryTime, result, err
 }
 
-func (db *Database) FacetSearch(facetInput []FaceInput) (queryTime time.Duration,
-	data map[string][]FacetOutput,
+func (db *Database) FacetSearch(facetInput []map[string]interface{}) (queryTime time.Duration,
+	data map[string][]map[string]interface{},
 	err error) {
 
 	q := bleve.NewMatchAllQuery()
 	searchRequest := bleve.NewSearchRequest(q)
 	searchRequest.Size = 0
 	for _, fi := range facetInput {
-		searchRequest.AddFacet(fi.FacetName, bleve.NewFacetRequest(fi.QueryInput, fi.FacetLimit))
+		facetName := fi["facetName"].(string)
+		queryInput := fi["queryInput"].(string)
+		facetLimit := fi["facetLimit"].(int)
+
+		searchRequest.AddFacet(facetName, bleve.NewFacetRequest(queryInput, facetLimit))
 	}
 
 	var searchResult *bleve.SearchResult
@@ -879,24 +883,19 @@ func (db *Database) FacetSearch(facetInput []FaceInput) (queryTime time.Duration
 	queryTime = searchResult.Took
 
 	if len(searchResult.Facets) > 0 {
-		data = make(map[string][]FacetOutput)
+		data = make(map[string][]map[string]interface{})
 		for fn, f := range searchResult.Facets {
-			data[fn] = make([]FacetOutput, 0, len(f.Terms)+1)
-			data[fn] = append(data[fn], FacetOutput{TermName: fn, TermCount: f.Total})
+			data[fn] = make([]map[string]interface{}, 0, len(f.Terms)+1)
+			data[fn] = append(data[fn], map[string]interface{}{"termName": fn, "termCount": f.Total})
+			//data[fn] = append(data[fn], FacetOutput{TermName: fn, TermCount: f.Total})
 
 			for _, t := range f.Terms {
-				fo := FacetOutput{
-					TermName:  t.Term,
-					TermCount: t.Count,
-				}
+				fo := map[string]interface{}{"termName": t.Term, "termCount": t.Count}
 				data[fn] = append(data[fn], fo)
 			}
 
 			if f.Other != 0 {
-				fo := FacetOutput{
-					TermName:  "Extras",
-					TermCount: f.Other,
-				}
+				fo := map[string]interface{}{"termName": "dodod::others", "termCount": f.Other}
 				data[fn] = append(data[fn], fo)
 			}
 		}

@@ -1464,7 +1464,7 @@ func TestDatabaseTable(t *testing.T) {
 	}
 
 	// Facet search
-	if _, data, err := db.FacetSearch([]FaceInput{{FacetName: "Types", QueryInput: "mixed_type", FacetLimit: 10}}); err != nil {
+	if _, data, err := db.FacetSearch([]map[string]interface{}{{"facetName": "Types", "queryInput": "mixed_type", "facetLimit": 10}}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		//t.Errorf("%v", data)
@@ -1475,7 +1475,7 @@ func TestDatabaseTable(t *testing.T) {
 	}
 
 	// Facet search
-	if _, data, err := db.FacetSearch([]FaceInput{{FacetName: "Types", QueryInput: "mixed_type", FacetLimit: 1}}); err != nil {
+	if _, data, err := db.FacetSearch([]map[string]interface{}{{"facetName": "Types", "queryInput": "mixed_type", "facetLimit": 1}}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		//t.Errorf("%v", data)

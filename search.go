@@ -56,7 +56,7 @@ type BleveSearch interface {
 		req *bleve.SearchRequest) (*bleve.SearchResult, error)
 }
 
-type FaceInput struct {
+type FacetInput struct {
 	FacetName  string `json:"facetName"`
 	QueryInput string `json:"queryInput"`
 	FacetLimit int    `json:"facetLimit"`
@@ -68,8 +68,8 @@ type FacetOutput struct {
 }
 
 type FacetSearch interface {
-	FacetSearch(facetInput []FaceInput) (
+	FacetSearch(facetInput []map[string]interface{}) (
 		queryTime time.Duration,
-		data map[string][]FacetOutput,
+		data map[string][]map[string]interface{},
 		err error)
 }
