@@ -1589,6 +1589,16 @@ func TestDatabaseTable(t *testing.T) {
 		}
 	}
 
+	//input["fields"] = []string{"*"}
+	//if data, err := db.Search(input, "bytes"); err != nil {
+	//	t.Fatalf("unexpected error: %v", err)
+	//} else {
+	//	if data == nil {
+	//		t.Fatalf("data should not be nil")
+	//	}
+	//	//t.Errorf("%s", data)
+	//}
+
 	// Close the database
 	if err := db.Close(); err != nil {
 		t.Fatalf("error occured while closing, error: %v", err)
