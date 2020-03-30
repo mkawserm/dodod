@@ -39,10 +39,9 @@ type Database struct {
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]interface{}
 
-	internalSearchResultLimit int
-	internalIndex             bleve.Index
-	internalDb                *badger.DB
-	internalIndexStoreName    string
+	internalIndex          bleve.Index
+	internalDb             *badger.DB
+	internalIndexStoreName string
 }
 
 func (db *Database) GetInternalDatabase() *badger.DB {
@@ -58,8 +57,6 @@ func (db *Database) GetIndexMapping() *mapping.IndexMappingImpl {
 }
 
 func (db *Database) initAll() {
-	db.internalSearchResultLimit = 20
-
 	if db.internalIndexStoreName == "" {
 		db.internalIndexStoreName = "badger"
 	}
@@ -93,10 +90,6 @@ func (db *Database) Setup(passwordHasher pasap.PasswordHasher,
 
 	db.initAll()
 	db.initIndexMapping()
-}
-
-func (db *Database) SetSearchResultLimit(n int) {
-	db.internalSearchResultLimit = n
 }
 
 func (db *Database) SetPasswordHasher(passwordHasher pasap.PasswordHasher) {
