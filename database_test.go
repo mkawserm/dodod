@@ -1,7 +1,9 @@
 package dodod
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/mkawserm/pasap"
@@ -10,6 +12,8 @@ import (
 	"testing"
 	"time"
 )
+
+import _ "github.com/blevesearch/bleve/analysis/analyzer/keyword"
 
 type DbCredentialsBasic struct {
 	Path     string
@@ -1256,6 +1260,7 @@ func TestDatabase_EncodeDecodeDocument(t *testing.T) {
 type FirstMixedType struct {
 	Id        string `json:"id"`
 	MixedType string `json:"mixed_type"`
+	Location  string `bleve:"location,geo_hash:true,index:true,store:true,include_in_all:true," json:"location"`
 
 	Field1 string    `json:"field_1"`
 	Field2 string    `json:"field_2"`
@@ -1281,6 +1286,7 @@ func (m *FirstMixedType) GetId() string {
 type SecondMixedType struct {
 	Id        string `json:"id"`
 	MixedType string `json:"mixed_type"`
+	//Location string `json:"location"`
 
 	Field11 string    `json:"field_11"`
 	Field12 string    `json:"field_12"`
@@ -1306,6 +1312,7 @@ func (m *SecondMixedType) GetId() string {
 type ThirdMixedType struct {
 	Id        string `json:"id"`
 	MixedType string `json:"mixed_type"`
+	//Location string `json:"location"`
 
 	Field21 string    `json:"field_21"`
 	Field22 string    `json:"field_22"`
@@ -1341,6 +1348,7 @@ func createTestData() (documentTypes []interface{}, testIds []string, testData [
 		&FirstMixedType{
 			Id:        "1",
 			MixedType: "FirstMixedType",
+			Location:  "wecpjc2b27ev",
 			Field1:    "FMTF 1",
 			Field2:    "FMTF 2",
 			Field3:    13,
@@ -1355,30 +1363,32 @@ func createTestData() (documentTypes []interface{}, testIds []string, testData [
 		&SecondMixedType{
 			Id:        "2",
 			MixedType: "SecondMixedType",
-			Field11:   "SMTF 11",
-			Field12:   "SMTF 12",
-			Field13:   213,
-			Field14:   214.2,
-			Field15:   false,
-			Field16:   time.Now(),
-			Field17:   []byte{21, 22, 23, 24, 25},
-			Field18:   []string{"21", "22", "23"},
-			Field19:   []int64{211111111111111, 311111111111122, 411111111111133},
-			Field20:   []float64{2111111111111.11, 3111111111111.22, 4111111111111.33},
+			//Location: "wecpkbeddsmf",
+			Field11: "SMTF 11",
+			Field12: "SMTF 12",
+			Field13: 213,
+			Field14: 214.2,
+			Field15: false,
+			Field16: time.Now(),
+			Field17: []byte{21, 22, 23, 24, 25},
+			Field18: []string{"21", "22", "23"},
+			Field19: []int64{211111111111111, 311111111111122, 411111111111133},
+			Field20: []float64{2111111111111.11, 3111111111111.22, 4111111111111.33},
 		},
 		&ThirdMixedType{
 			Id:        "3",
 			MixedType: "ThirdMixedType",
-			Field21:   "TMTF 21",
-			Field22:   "TMTF 22",
-			Field23:   323,
-			Field24:   324.3,
-			Field25:   true,
-			Field26:   time.Now(),
-			Field27:   []byte{31, 32, 33, 34, 35},
-			Field28:   []string{"31", "32", "33"},
-			Field29:   []int64{311111111111111, 411111111111122, 511111111111133},
-			Field30:   []float64{3111111111111.11, 4111111111111.22, 5111111111111.33},
+			//Location: "wecnzm94b80h",
+			Field21: "TMTF 21",
+			Field22: "TMTF 22",
+			Field23: 323,
+			Field24: 324.3,
+			Field25: true,
+			Field26: time.Now(),
+			Field27: []byte{31, 32, 33, 34, 35},
+			Field28: []string{"31", "32", "33"},
+			Field29: []int64{311111111111111, 411111111111122, 511111111111133},
+			Field30: []float64{3111111111111.11, 4111111111111.22, 5111111111111.33},
 		},
 	}
 
@@ -1394,8 +1404,15 @@ func TestDatabaseTable(t *testing.T) {
 	defer cleanupDb(t, dbPath)
 
 	db := &Database{}
+	//db.SetIndexStoreName("scorch")
 	db.SetDbPath(dbPath)
 	db.SetupDefaults()
+
+	// Test Data
+	//for _, v:= range testData {
+	//	data, _ := json.Marshal(v)
+	//	t.Errorf("%s", data)
+	//}
 
 	// Register documents before opening database
 	for _, v := range documentTypes {
@@ -1486,114 +1503,6 @@ func TestDatabaseTable(t *testing.T) {
 		}
 
 	}
-
-	// Find Id
-	//if total, _, result, err := db.FindId("ThirdMixedType", 0); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//} else {
-	//	if total != 1 {
-	//		t.Fatalf("Total result should be 1")
-	//	}
-	//
-	//	if result[0].Id != "3" {
-	//		t.Fatalf("Id be 3")
-	//	}
-	//}
-
-	// Facet search
-	//if _, data, err := db.FacetSearch([]map[string]interface{}{{"facetName": "Types", "queryInput": "mixed_type", "facetLimit": 10}}); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//} else {
-	//	//t.Errorf("%v", data)
-	//	//t.Errorf("%v", len(data["Types"]))
-	//	if len(data["Types"]) != 4 {
-	//		t.Fatalf("Facet types should be 4")
-	//	}
-	//}
-
-	// Facet search
-	//if _, data, err := db.FacetSearch([]map[string]interface{}{{"facetName": "Types", "queryInput": "mixed_type", "facetLimit": 1}}); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//} else {
-	//	//t.Errorf("%v", data)
-	//	//t.Errorf("%v", len(data["Types"]))
-	//	if len(data["Types"]) != 3 {
-	//		t.Fatalf("Facet types should be 3")
-	//	}
-	//}
-
-	// BleveComplex SimpleSearch
-	//sortBy := []string{"-id"}
-	//queryType := "QueryString"
-	//limit := 10
-	//fields := []string{"*"}
-	//if result, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, queryType, 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//} else {
-	//	if result.Total != 1 {
-	//		t.Fatalf("result should be one")
-	//	}
-	//}
-	//
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "FuzzyQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "MatchAllQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "MatchQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "MatchPhraseQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "RegexpQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "TermQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "WildcardQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "PrefixQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, err := db.BleveComplexSearch("ThirdMixedType", fields, sortBy, "", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//
-	////Complex SimpleSearch
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "QueryString", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "FuzzyQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "MatchAllQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "MatchQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "MatchPhraseQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "RegexpQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "TermQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "WildcardQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "PrefixQuery", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
-	//if _, _, _, err := db.ComplexSearch("ThirdMixedType", fields, sortBy, "", 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//}
 
 	// Search
 	//input := make(map[string]interface{})
@@ -1744,6 +1653,16 @@ func TestDatabaseTable(t *testing.T) {
 			bleveSearchResult := data.(*bleve.SearchResult)
 			if bleveSearchResult.Total != 1 {
 				t.Fatalf("Total Expected 1, but found: %v", bleveSearchResult.Total)
+			}
+
+			//fmt.Println(bleveSearchResult.Hits[0].Fields)
+
+			if lat, found := bleveSearchResult.Hits[0].Fields["location"].(string); !found {
+				t.Fatalf("Location data not found")
+			} else {
+				if lat != "wecpjc2b27ev" {
+					t.Fatalf("Lat does not match.")
+				}
 			}
 		}
 	})
@@ -1998,4 +1917,96 @@ func TestDatabaseTable(t *testing.T) {
 	if err := db.Close(); err != nil {
 		t.Fatalf("error occured while closing, error: %v", err)
 	}
+}
+
+//type mockBleveIndexOpener struct {
+//}
+//
+//func (b *mockBleveIndexOpener) BleveIndex(dbPath string,
+//	indexMapping *mapping.IndexMappingImpl,
+//	indexName string,
+//	config map[string]interface{}) (bleve.Index, error) {
+//
+//	return bleve.NewUsing(dbPath, indexMapping, "scorch", "blotdb", config)
+//}
+
+func TestDatabase_GeoSearch(t *testing.T) {
+	t.Helper()
+
+	documentTypes, _, testData := createTestData()
+
+	dbPath := "/tmp/dodod"
+	defer cleanupDb(t, dbPath)
+
+	db := &Database{}
+	db.SetIndexStoreName("scorch")
+	db.SetDbPath(dbPath)
+	db.SetupDefaults()
+	db.GetIndexMapping()
+	//db.SetIndexOpener(&mockBleveIndexOpener{})
+
+	// Test Data
+	//for _, v:= range testData {
+	//	data, _ := json.Marshal(v)
+	//	t.Errorf("%s", data)
+	//}
+
+	// Register documents before opening database
+	for _, v := range documentTypes {
+		if err := db.RegisterDocument(v); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		break
+	}
+
+	// Open database
+	if err := db.Open(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// Add test data to the database
+	if err := db.Create(testData[0:1]); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	t.Run("Search With GeoDistance", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["fields"] = []string{"*"}
+		input["sort"] = []string{"_id"}
+		input["size"] = 100
+		input["from"] = 0
+		input["explain"] = true
+		input["include_locations"] = true
+		input["query"] = map[string]interface{}{
+			"name": "GeoDistance",
+			"p": map[string]interface{}{
+				"lon":      114.112603,
+				"lat":      22.371154,
+				"distance": "1mi",
+				"field":    "location",
+			},
+		}
+		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+			bleveSearchResult := data.(*bleve.SearchResult)
+
+			fmt.Printf("\n\n%s\n\n", bleveSearchResult.Request.Query)
+			indexBytes, _ := json.Marshal(db.internalIndex.Mapping())
+			t.Errorf("%s", string(indexBytes))
+
+			if bleveSearchResult.Total != 1 {
+				t.Fatalf("Total Expected 1, but found: %v", bleveSearchResult.Total)
+			}
+		}
+	})
+
+	// Close the database
+	if err := db.Close(); err != nil {
+		t.Fatalf("error occured while closing, error: %v", err)
+	}
+
 }

@@ -124,13 +124,13 @@ func (m *mockErrorStruct1) Type() string {
 }
 
 type mockCoverStruct1 struct {
-	Id       string      `json:"id"`
-	T1       string      `bleve:"-"`
-	T2       string      `bleve:"t2,analyzer:english"`
-	Meta     string      `bleve:"meta,store:false,index:false,include_term_vectors:false,include_in_all:false,doc_values:false"`
-	Meta1    string      `bleve:"meta1,index1:false,include_in_all:false"`
-	Met2     string      `bleve:"met2,index:false,include_in_all:false"`
-	Location GeoLocation `json:"location"`
+	Id       string `json:"id"`
+	T1       string `bleve:"-"`
+	T2       string `bleve:"t2,analyzer:english"`
+	Meta     string `bleve:"meta,store:false,index:false,include_term_vectors:false,include_in_all:false,doc_values:false"`
+	Meta1    string `bleve:"meta1,index1:false,include_in_all:false"`
+	Met2     string `bleve:"met2,index:false,include_in_all:false"`
+	Location string `bleve:"location,geo_hash:true,index:true,store:true,include_term_vectors:true,include_in_all:true," json:"location"`
 }
 
 func (m *mockCoverStruct1) Type() string {
@@ -138,13 +138,13 @@ func (m *mockCoverStruct1) Type() string {
 }
 
 type mockCoverStruct2 struct {
-	Id       string      `json:"id"`
-	T1       string      `bleve:"-"`
-	T2       string      `bleve:"t2,analyzer:english"`
-	Meta     string      `bleve:"meta,store:false,index:false,include_term_vectors:false,include_in_all:false,doc_values:false"`
-	Meta1    string      `bleve:"meta1,index1:false,include_in_all:false"`
-	Met2     string      `bleve:"met2,index:false,include_in_all:false"`
-	Location GeoLocation `json:"location"`
+	Id       string `json:"id"`
+	T1       string `bleve:"-"`
+	T2       string `bleve:"t2,analyzer:english"`
+	Meta     string `bleve:"meta,store:false,index:false,include_term_vectors:false,include_in_all:false,doc_values:false"`
+	Meta1    string `bleve:"meta1,index1:false,include_in_all:false"`
+	Met2     string `bleve:"met2,index:false,include_in_all:false"`
+	Location string `bleve:"location,geo_hash:true,index:true,store:true,include_term_vectors:true,include_in_all:true," json:"location"`
 
 	CustomStruct *mockCoverStruct1 `json:"custom_struct"`
 

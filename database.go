@@ -53,6 +53,10 @@ func (db *Database) GetInternalIndex() bleve.Index {
 	return db.internalIndex
 }
 
+func (db *Database) GetIndexMapping() *mapping.IndexMappingImpl {
+	return db.indexMapping
+}
+
 func (db *Database) initAll() {
 	db.internalSearchResultLimit = 20
 
@@ -862,6 +866,18 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 					bleveQuery = wildcardQuery
 				}
 
+			case "GeoDistance":
+				if lon, lonFound := p["lon"].(float64); lonFound {
+					if lat, latFound := p["lat"].(float64); latFound {
+						if distance, distanceFound := p["distance"].(string); distanceFound {
+							geoDistanceQuery := bleve.NewGeoDistanceQuery(lon, lat, distance)
+							if field, fieldFound := p["field"].(string); fieldFound {
+								geoDistanceQuery.SetField(field)
+							}
+							bleveQuery = geoDistanceQuery
+						}
+					}
+				}
 			}
 			// Switch end
 		}

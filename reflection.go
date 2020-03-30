@@ -2,7 +2,7 @@ package dodod
 
 import (
 	"github.com/blevesearch/bleve"
-	"github.com/blevesearch/bleve/analysis/analyzer/simple"
+	"github.com/blevesearch/bleve/analysis/analyzer/standard"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/go-openapi/inflect"
 	"reflect"
@@ -107,7 +107,7 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 
 	docType := docValue.Type()
 	docMapping := bleve.NewDocumentMapping()
-	docMapping.DefaultAnalyzer = simple.Name
+	docMapping.DefaultAnalyzer = standard.Name
 
 	for i := 0; i < docType.NumField(); i++ {
 		field := docType.Field(i)
@@ -137,6 +137,10 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 			fieldMap = bleve.NewNumericFieldMapping()
 		case reflect.Bool:
 			fieldMap = bleve.NewBooleanFieldMapping()
+		case reflect.String:
+			if strings.Contains(bleveTag, "geo_hash:true") {
+				fieldMap = bleve.NewGeoPointFieldMapping()
+			}
 		case reflect.Struct:
 			f := docValue.FieldByName(field.Name)
 			if f.CanInterface() {
@@ -144,8 +148,6 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 				switch fi.(type) {
 				case time.Time:
 					fieldMap = bleve.NewDateTimeFieldMapping()
-				case GeoLocation:
-					fieldMap = bleve.NewGeoPointFieldMapping()
 				default:
 					if _, ok := fi.(mapping.Classifier); ok {
 						//fmt.Println(f.String())
@@ -175,6 +177,11 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 			for _, v := range bleveTags[1:] {
 				kv := strings.Split(v, `:`)
 				if len(kv) == 2 {
+					if kv[0] == "geo_hash" {
+						//fieldMap.Name = ""
+						continue
+					}
+
 					key := inflect.Camelize(kv[0])
 					f := mapValue.FieldByName(key)
 					if f.IsValid() && f.CanSet() {
