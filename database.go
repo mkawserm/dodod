@@ -821,6 +821,10 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 				if term, termFound := p["term"].(string); termFound {
 					fuzzyQuery := bleve.NewFuzzyQuery(term)
 
+					if fuzziness, fuzzinessFound := p["fuzziness"].(int); fuzzinessFound {
+						fuzzyQuery.Fuzziness = fuzziness
+					}
+
 					bleveQuery = fuzzyQuery
 				}
 
@@ -906,12 +910,12 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 	}
 
 	if highlight, highlightFound := input["highlight"].(map[string]interface{}); highlightFound {
+		searchRequest.Highlight = bleve.NewHighlight()
 		if style, styleFound := highlight["style"].(string); styleFound {
-			if fields, fieldsFound := highlight["fields"].([]string); fieldsFound {
-				searchRequest.Highlight = bleve.NewHighlight()
-				searchRequest.Highlight.Style = &style
-				searchRequest.Highlight.Fields = fields
-			}
+			searchRequest.Highlight.Style = &style
+		}
+		if fields, fieldsFound := highlight["fields"].([]string); fieldsFound {
+			searchRequest.Highlight.Fields = fields
 		}
 	}
 
