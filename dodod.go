@@ -5,12 +5,6 @@ type Dodod interface {
 	Mutation
 
 	Search
-	//FindId
-
-	//FacetSearch
-	//SimpleSearch
-	//ComplexSearch
-	//BleveSearch
 
 	DocumentRegistry
 }
