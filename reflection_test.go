@@ -123,15 +123,17 @@ func (m *mockErrorStruct1) Type() string {
 	return "mockErrorStruct1"
 }
 
-//type mockErrorStruct2 struct {
-//	Id string `json:"id"`
-//	Meta string `bleve:"meta:smile1e"`
-//	Meta1 string `bleve:"meta1,index1:false,include_in_all1:false"`
-//}
-//
-//func (m *mockErrorStruct2) Type() string {
-//	return "mockErrorStruct2"
-//}
+type mockErrorStruct2 struct {
+	Id    string `json:"id"`
+	T1    string `bleve:"-"`
+	Meta  string `bleve:"meta,store:false,index:false,include_term_vectors:false,include_in_all:false,doc_values:false"`
+	Meta1 string `bleve:"meta1,index1:false,include_in_all:false"`
+	Met2  string `bleve:"met2,index:false,include_in_all:false"`
+}
+
+func (m *mockErrorStruct2) Type() string {
+	return "mockErrorStruct2"
+}
 
 func Test_registerDocumentMapping(t *testing.T) {
 	t.Helper()
@@ -155,7 +157,10 @@ func Test_registerDocumentMapping(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	//if err := registerDocumentMapping(bleve.NewIndexMapping(), &mockErrorStruct2{}); err != nil {
-	//	t.Errorf("unexpected error: %v", err)
-	//}
+	m := bleve.NewIndexMapping()
+	if err := registerDocumentMapping(m, &mockErrorStruct2{}); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	//d, _ :=json.Marshal(m)
+	//t.Errorf(string(d))
 }

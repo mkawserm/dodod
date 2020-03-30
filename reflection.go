@@ -135,6 +135,8 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 		switch k {
 		case reflect.Int:
 			fieldMap = bleve.NewNumericFieldMapping()
+		case reflect.Bool:
+			fieldMap = bleve.NewBooleanFieldMapping()
 		case reflect.Struct:
 			f := docValue.FieldByName(field.Name)
 			if f.CanInterface() {
@@ -180,8 +182,8 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 							f.SetBool(b)
 						case reflect.String:
 							f.SetString(kv[1])
-						default:
-							return ErrUnknownMappingField
+							//default:
+							//	return ErrUnknownMappingField
 						}
 					}
 				}
