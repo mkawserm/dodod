@@ -172,6 +172,10 @@ var mockErrOpenIndex = errors.New("mock: failed to open internalIndex")
 type mockIndexOpener struct {
 }
 
+func (b *mockIndexOpener) SetEngineName(string) {
+
+}
+
 func (b *mockIndexOpener) BleveIndex(string, *mapping.IndexMappingImpl, string, map[string]interface{}) (bleve.Index, error) {
 	return nil, mockErrOpenIndex
 }

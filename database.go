@@ -1204,6 +1204,7 @@ func (db *Database) openDb() error {
 				},
 			})
 	} else {
+		db.indexOpener.SetEngineName("boltdb")
 		index, err = db.indexOpener.BleveIndex(db.dbPath,
 			db.indexMapping,
 			scorch.Name,

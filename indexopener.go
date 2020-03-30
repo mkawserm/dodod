@@ -6,6 +6,7 @@ import (
 )
 
 type IndexOpener interface {
+	SetEngineName(name string)
 	BleveIndex(dbPath string,
 		indexMapping *mapping.IndexMappingImpl,
 		indexName string,
