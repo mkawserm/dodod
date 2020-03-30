@@ -1756,6 +1756,7 @@ func TestDatabaseTable(t *testing.T) {
 			"p": map[string]interface{}{
 				"term":      "2",
 				"fuzziness": 3,
+				"field":     "id",
 			},
 		}
 		if _, err := db.Search(input, "bleveSearchResult"); err == nil {
@@ -1770,6 +1771,7 @@ func TestDatabaseTable(t *testing.T) {
 			"name": "Match",
 			"p": map[string]interface{}{
 				"match": "SecondMixedType",
+				"field": "mixed_type",
 			},
 		}
 		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
@@ -1792,6 +1794,7 @@ func TestDatabaseTable(t *testing.T) {
 			"name": "MatchPhrase",
 			"p": map[string]interface{}{
 				"match_phrase": "SecondMixedType",
+				"field":        "mixed_type",
 			},
 		}
 		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
@@ -1814,6 +1817,7 @@ func TestDatabaseTable(t *testing.T) {
 			"name": "Prefix",
 			"p": map[string]interface{}{
 				"prefix": "21",
+				"field":  "_all",
 			},
 		}
 		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
@@ -1836,6 +1840,7 @@ func TestDatabaseTable(t *testing.T) {
 			"name": "Wildcard",
 			"p": map[string]interface{}{
 				"wildcard": "2?",
+				"field":    "_all",
 			},
 		}
 		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
@@ -1857,7 +1862,8 @@ func TestDatabaseTable(t *testing.T) {
 		input["query"] = map[string]interface{}{
 			"name": "Fuzzy",
 			"p": map[string]interface{}{
-				"term": "2",
+				"term":  "2",
+				"field": "id",
 			},
 		}
 		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
@@ -1879,7 +1885,8 @@ func TestDatabaseTable(t *testing.T) {
 		input["query"] = map[string]interface{}{
 			"name": "Term",
 			"p": map[string]interface{}{
-				"term": "1",
+				"term":  "1",
+				"field": "id",
 			},
 		}
 		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
@@ -1902,6 +1909,7 @@ func TestDatabaseTable(t *testing.T) {
 			"name": "Regexp",
 			"p": map[string]interface{}{
 				"regexp": "2",
+				"field":  "id",
 			},
 		}
 		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
@@ -1911,7 +1919,7 @@ func TestDatabaseTable(t *testing.T) {
 				t.Fatalf("data should not be nil")
 			}
 			bleveSearchResult := data.(*bleve.SearchResult)
-			if bleveSearchResult.Total != 2 {
+			if bleveSearchResult.Total != 1 {
 				t.Fatalf("Total Expected 2, but found: %v", bleveSearchResult.Total)
 			}
 		}

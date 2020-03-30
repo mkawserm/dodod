@@ -821,20 +821,32 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 						fuzzyQuery.Fuzziness = fuzziness
 					}
 
+					if field, fieldFound := p["field"].(string); fieldFound {
+						fuzzyQuery.SetField(field)
+					}
+
+					if prefixLength, prefixLengthFound := p["prefix_length"].(int); prefixLengthFound {
+						fuzzyQuery.SetPrefix(prefixLength)
+					}
+
 					bleveQuery = fuzzyQuery
 				}
 
 			case "Regexp":
 				if regexp, regexpFound := p["regexp"].(string); regexpFound {
 					regexpQuery := bleve.NewRegexpQuery(regexp)
-
+					if field, fieldFound := p["field"].(string); fieldFound {
+						regexpQuery.SetField(field)
+					}
 					bleveQuery = regexpQuery
 				}
 
 			case "Term":
 				if term, termFound := p["term"].(string); termFound {
 					termQuery := bleve.NewTermQuery(term)
-
+					if field, fieldFound := p["field"].(string); fieldFound {
+						termQuery.SetField(field)
+					}
 					bleveQuery = termQuery
 				}
 
@@ -842,12 +854,19 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 				if matchPhrase, matchPhraseFound := p["match_phrase"].(string); matchPhraseFound {
 					matchPhraseQuery := bleve.NewMatchPhraseQuery(matchPhrase)
 
+					if field, fieldFound := p["field"].(string); fieldFound {
+						matchPhraseQuery.SetField(field)
+					}
 					bleveQuery = matchPhraseQuery
 				}
 
 			case "Match":
 				if match, matchFound := p["match"].(string); matchFound {
 					matchQuery := bleve.NewMatchQuery(match)
+
+					if field, fieldFound := p["field"].(string); fieldFound {
+						matchQuery.SetField(field)
+					}
 
 					bleveQuery = matchQuery
 				}
@@ -856,12 +875,20 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 				if prefix, prefixFound := p["prefix"].(string); prefixFound {
 					prefixQuery := bleve.NewPrefixQuery(prefix)
 
+					if field, fieldFound := p["field"].(string); fieldFound {
+						prefixQuery.SetField(field)
+					}
+
 					bleveQuery = prefixQuery
 				}
 
 			case "Wildcard":
 				if wildcard, wildcardFound := p["wildcard"].(string); wildcardFound {
 					wildcardQuery := bleve.NewWildcardQuery(wildcard)
+
+					if field, fieldFound := p["field"].(string); fieldFound {
+						wildcardQuery.SetField(field)
+					}
 
 					bleveQuery = wildcardQuery
 				}
