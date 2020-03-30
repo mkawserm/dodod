@@ -762,12 +762,23 @@ func TestDatabase_CreateIndex(t *testing.T) {
 	db.SetDbPassword(dbPassword)
 	db.SetDbPath(dbPath)
 
+	data := []interface{}{&MyTestDocument{Id: "1"}}
+
+	if err := db.CreateIndex(data); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
 	err := db.Open()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	data := []interface{}{&MyTestDocument{Id: "1"}}
+	if err := db.CreateIndex([]interface{}{&map[string]string{"id": "1"}}); err != ErrInvalidDocument {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := db.CreateIndex([]interface{}{&MyTestDocument{Id: ""}}); err != ErrIdCanNotBeEmpty {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if err := db.CreateIndex(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -787,12 +798,23 @@ func TestDatabase_UpdateIndex(t *testing.T) {
 	db.SetDbPassword(dbPassword)
 	db.SetDbPath(dbPath)
 
+	data := []interface{}{&MyTestDocument{Id: "1"}}
+
+	if err := db.UpdateIndex(data); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
 	err := db.Open()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	data := []interface{}{&MyTestDocument{Id: "1"}}
+	if err := db.UpdateIndex([]interface{}{&map[string]string{"id": "1"}}); err != ErrInvalidDocument {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := db.UpdateIndex([]interface{}{&MyTestDocument{Id: ""}}); err != ErrIdCanNotBeEmpty {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if err := db.UpdateIndex(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -812,12 +834,23 @@ func TestDatabase_DeleteIndex(t *testing.T) {
 	db.SetDbPassword(dbPassword)
 	db.SetDbPath(dbPath)
 
+	data := []interface{}{&MyTestDocument{Id: "1"}}
+
+	if err := db.DeleteIndex(data); err != ErrDatabaseIsNotOpen {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
 	err := db.Open()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	data := []interface{}{&MyTestDocument{Id: "1"}}
+	if err := db.DeleteIndex([]interface{}{&map[string]string{"id": "1"}}); err != ErrInvalidDocument {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := db.DeleteIndex([]interface{}{&MyTestDocument{Id: ""}}); err != ErrIdCanNotBeEmpty {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if err := db.DeleteIndex(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -1404,6 +1437,10 @@ func TestDatabaseTable(t *testing.T) {
 	// Get internal db for just covering
 	if v := db.GetInternalDatabase(); v == nil {
 		t.Fatalf("Internal database should not be nil")
+	}
+
+	if v := db.GetInternalIndex(); v == nil {
+		t.Fatalf("Internal index should not be nil")
 	}
 
 	// Add test data to the database

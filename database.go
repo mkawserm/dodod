@@ -2,7 +2,6 @@ package dodod
 
 import (
 	"bytes"
-	"context"
 	"encoding/binary"
 	"encoding/json"
 	"github.com/blevesearch/bleve"
@@ -20,17 +19,6 @@ import (
 	"reflect"
 	"time"
 )
-
-type BleveIndexOpener struct {
-}
-
-func (b *BleveIndexOpener) BleveIndex(dbPath string,
-	indexMapping *mapping.IndexMappingImpl,
-	indexName string,
-	config map[string]interface{}) (bleve.Index, error) {
-
-	return bdodb.BleveIndex(dbPath, indexMapping, indexName, config)
-}
 
 type Database struct {
 	passwordHasher        pasap.PasswordHasher
@@ -59,6 +47,10 @@ type Database struct {
 
 func (db *Database) GetInternalDatabase() *badger.DB {
 	return db.internalDb
+}
+
+func (db *Database) GetInternalIndex() bleve.Index {
+	return db.internalIndex
 }
 
 func (db *Database) initAll() {
@@ -1263,21 +1255,21 @@ func (db *Database) Search(input map[string]interface{}, outputType string) (int
 //	return db.internalIndex.Search(searchRequest)
 //}
 
-func (db *Database) BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error) {
-	if !db.IsDatabaseReady() {
-		return nil, ErrDatabaseIsNotOpen
-	}
-
-	return db.internalIndex.Search(req)
-}
-
-func (db *Database) BleveSearchInContext(ctx context.Context, req *bleve.SearchRequest) (*bleve.SearchResult, error) {
-	if !db.IsDatabaseReady() {
-		return nil, ErrDatabaseIsNotOpen
-	}
-
-	return db.internalIndex.SearchInContext(ctx, req)
-}
+//func (db *Database) BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error) {
+//	if !db.IsDatabaseReady() {
+//		return nil, ErrDatabaseIsNotOpen
+//	}
+//
+//	return db.internalIndex.Search(req)
+//}
+//
+//func (db *Database) BleveSearchInContext(ctx context.Context, req *bleve.SearchRequest) (*bleve.SearchResult, error) {
+//	if !db.IsDatabaseReady() {
+//		return nil, ErrDatabaseIsNotOpen
+//	}
+//
+//	return db.internalIndex.SearchInContext(ctx, req)
+//}
 
 func (db *Database) isDbExists() bool {
 	fi, err := os.Stat(db.dbPath + "/dodod.json")

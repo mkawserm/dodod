@@ -1,11 +1,5 @@
 package dodod
 
-import (
-	"context"
-)
-
-import "github.com/blevesearch/bleve"
-
 // Search interface defines a basic method to search
 //
 // Implementation must strictly follow input and output guide
@@ -61,13 +55,13 @@ type Search interface {
 //}
 
 // BleveSearch basic interface
-type BleveSearch interface {
-	BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error)
-
-	BleveSearchInContext(
-		ctx context.Context,
-		req *bleve.SearchRequest) (*bleve.SearchResult, error)
-}
+//type BleveSearch interface {
+//	BleveSearch(req *bleve.SearchRequest) (*bleve.SearchResult, error)
+//
+//	BleveSearchInContext(
+//		ctx context.Context,
+//		req *bleve.SearchRequest) (*bleve.SearchResult, error)
+//}
 
 //type FacetInput struct {
 //	FacetName  string `json:"facetName"`
