@@ -3,7 +3,6 @@ package dodod
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/blevesearch/bleve"
 	"github.com/blevesearch/bleve/mapping"
 	"github.com/mkawserm/pasap"
@@ -1659,15 +1658,10 @@ func TestDatabaseTable(t *testing.T) {
 				t.Fatalf("Total Expected 1, but found: %v", bleveSearchResult.Total)
 			}
 
-			fmt.Println(bleveSearchResult.Hits[0].Fields)
-
-			//if lat, found := bleveSearchResult.Hits[0].Fields["location"].(string); !found {
-			//	t.Fatalf("Location data not found")
-			//} else {
-			//	if lat != "wecpjc2b27ev" {
-			//		t.Fatalf("Lat does not match.")
-			//	}
-			//}
+			if _, found := bleveSearchResult.Hits[0].Fields["location"]; !found {
+				t.Logf("%v", bleveSearchResult.Hits[0].Fields)
+				t.Fatalf("Location data not found")
+			}
 		}
 	})
 
