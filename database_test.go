@@ -1559,35 +1559,9 @@ func TestDatabaseTable(t *testing.T) {
 	//}
 
 	// Search
-	input := make(map[string]interface{})
-	input["sort"] = []string{"_id"}
+	//input := make(map[string]interface{})
+	//input["sort"] = []string{"_id"}
 	//input["fields"] = []string{"*"}
-
-	if data, err := db.Search(input, "mapIncludeData"); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	} else {
-		if data == nil {
-			t.Fatalf("data should not be nil")
-		}
-		//output, _ := json.Marshal(data)
-		//t.Errorf("%v", data)
-	}
-
-	if data, err := db.Search(input, "map"); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	} else {
-		if data == nil {
-			t.Fatalf("data should not be nil")
-		}
-	}
-
-	if data, err := db.Search(input, "bytes"); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	} else {
-		if data == nil {
-			t.Fatalf("data should not be nil")
-		}
-	}
 
 	//input["fields"] = []string{"*"}
 	//if data, err := db.Search(input, "bytes"); err != nil {
@@ -1598,6 +1572,90 @@ func TestDatabaseTable(t *testing.T) {
 	//	}
 	//	//t.Errorf("%s", data)
 	//}
+
+	t.Run("outputType mapIncludeData", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		if data, err := db.Search(input, "mapIncludeData"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+			//output, _ := json.Marshal(data)
+			//t.Errorf("%v", data)
+		}
+	})
+
+	t.Run("outputType map", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		if data, err := db.Search(input, "map"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+		}
+	})
+
+	t.Run("outputType bytes", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		if data, err := db.Search(input, "bytes"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+		}
+	})
+
+	t.Run("outputType bleveSearchResult", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+		}
+	})
+
+	t.Run("outputType default/empty", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		if data, err := db.Search(input, ""); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+		}
+	})
+
+	t.Run("Search With QueryString", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		input["query"] = map[string]interface{}{
+			"name": "QueryString",
+			"p": map[string]interface{}{
+				"q": "id:1",
+			},
+		}
+		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+			bleveSearchResult := data.(*bleve.SearchResult)
+			if bleveSearchResult.Total != 1 {
+				t.Fatalf("Total Expected 1, but found: %v", bleveSearchResult.Total)
+			}
+		}
+	})
 
 	// Close the database
 	if err := db.Close(); err != nil {
