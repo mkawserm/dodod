@@ -1942,7 +1942,7 @@ func TestDatabase_GeoSearch(t *testing.T) {
 	defer cleanupDb(t, dbPath)
 
 	db := &Database{}
-	//db.SetIndexStoreName("badger")
+	//db.SetIndexStoreName(scorch.Name)
 	db.SetDbPath(dbPath)
 	db.SetupDefaults()
 	//db.SetIndexOpener(&mockBleveIndexOpener{})
