@@ -1657,6 +1657,94 @@ func TestDatabaseTable(t *testing.T) {
 		}
 	})
 
+	t.Run("Search With Match", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		input["query"] = map[string]interface{}{
+			"name": "Match",
+			"p": map[string]interface{}{
+				"match": "SecondMixedType",
+			},
+		}
+		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+			bleveSearchResult := data.(*bleve.SearchResult)
+			if bleveSearchResult.Total != 1 {
+				t.Fatalf("Total Expected 1, but found: %v", bleveSearchResult.Total)
+			}
+		}
+	})
+
+	t.Run("Search With MatchPhrase", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		input["query"] = map[string]interface{}{
+			"name": "MatchPhrase",
+			"p": map[string]interface{}{
+				"match_phrase": "SecondMixedType",
+			},
+		}
+		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+			bleveSearchResult := data.(*bleve.SearchResult)
+			if bleveSearchResult.Total != 1 {
+				t.Fatalf("Total Expected 1, but found: %v", bleveSearchResult.Total)
+			}
+		}
+	})
+
+	t.Run("Search With Prefix", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		input["query"] = map[string]interface{}{
+			"name": "Prefix",
+			"p": map[string]interface{}{
+				"prefix": "21",
+			},
+		}
+		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+			bleveSearchResult := data.(*bleve.SearchResult)
+			if bleveSearchResult.Total != 2 {
+				t.Fatalf("Total Expected 2, but found: %v", bleveSearchResult.Total)
+			}
+		}
+	})
+
+	t.Run("Search With Wildcard", func(t *testing.T) {
+		input := make(map[string]interface{})
+		input["sort"] = []string{"_id"}
+		input["query"] = map[string]interface{}{
+			"name": "Wildcard",
+			"p": map[string]interface{}{
+				"wildcard": "2?",
+			},
+		}
+		if data, err := db.Search(input, "bleveSearchResult"); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		} else {
+			if data == nil {
+				t.Fatalf("data should not be nil")
+			}
+			bleveSearchResult := data.(*bleve.SearchResult)
+			if bleveSearchResult.Total != 2 {
+				t.Fatalf("Total Expected 2, but found: %v", bleveSearchResult.Total)
+			}
+		}
+	})
+
 	// Close the database
 	if err := db.Close(); err != nil {
 		t.Fatalf("error occured while closing, error: %v", err)
