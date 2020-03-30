@@ -1275,9 +1275,9 @@ type FirstMixedType struct {
 	Field10 []float64 `json:"field_10"`
 }
 
-func (m *FirstMixedType) BleveType() string {
-	return "FirstMixedType"
-}
+//func (m *FirstMixedType) BleveType() string {
+//	return "FirstMixedType"
+//}
 
 func (m *FirstMixedType) Type() string {
 	return "FirstMixedType"
