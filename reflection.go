@@ -92,17 +92,19 @@ func getId(t reflect.Type, v reflect.Value) string {
 
 func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName ...string) (err error) {
 	baseValue := reflect.ValueOf(base)
-	if !baseValue.CanInterface() {
-		return ErrInvalidBase
-	}
+	//if !baseValue.CanInterface() {
+	//	return ErrInvalidBase
+	//}
 
 	docValue := reflect.ValueOf(doc).Elem()
-	if !docValue.IsValid() {
-		return ErrInvalidDoc
-	}
-	if docValue.Kind() != reflect.Struct {
-		return ErrInvalidDocNotStruct
-	}
+	//if !docValue.IsValid() {
+	//	return ErrInvalidDoc
+	//}
+
+	//if docValue.Kind() != reflect.Struct {
+	//	return ErrInvalidDocNotStruct
+	//}
+
 	docType := docValue.Type()
 	docMapping := bleve.NewDocumentMapping()
 	docMapping.DefaultAnalyzer = simple.Name
@@ -197,9 +199,10 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 		b := base.(*mapping.DocumentMapping)
 		if len(docName) > 0 {
 			b.AddSubDocumentMapping(docName[0], docMapping)
-		} else {
-			b.AddSubDocumentMapping(doc.Type(), docMapping)
 		}
+		//else {
+		//	b.AddSubDocumentMapping(doc.Type(), docMapping)
+		//}
 	default:
 		return ErrUnknownBaseType
 	}
