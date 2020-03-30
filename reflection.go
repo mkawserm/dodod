@@ -178,7 +178,7 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 				kv := strings.Split(v, `:`)
 				if len(kv) == 2 {
 					if kv[0] == "geo_hash" {
-						//fieldMap.Name = ""
+						fieldMap.Name = ""
 						continue
 					}
 
@@ -202,7 +202,7 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 			}
 		}
 
-		docMapping.AddFieldMappingsAt(field.Name, fieldMap)
+		docMapping.AddFieldMappingsAt(name, fieldMap)
 	}
 
 	switch baseValue.Interface().(type) {
