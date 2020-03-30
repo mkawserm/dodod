@@ -144,17 +144,22 @@ func registerDocumentMapping(base interface{}, doc mapping.Classifier, docName .
 				switch fi.(type) {
 				case time.Time:
 					fieldMap = bleve.NewDateTimeFieldMapping()
+				case GeoLocation:
+					fieldMap = bleve.NewGeoPointFieldMapping()
 				default:
 					if _, ok := fi.(mapping.Classifier); ok {
+						//fmt.Println(f.String())
 						var d interface{}
 						if f.Type().Kind() == reflect.Ptr {
 							d = reflect.New(f.Type().Elem()).Interface()
-						} else {
-							d = reflect.New(f.Type()).Interface()
 						}
-						if err = registerDocumentMapping(docMapping, d.(mapping.Classifier), name); err != nil {
-							return
-						}
+						//else {
+						//	d = reflect.New(f.Type()).Interface()
+						//}
+						//if err = registerDocumentMapping(docMapping, d.(mapping.Classifier), name); err != nil {
+						//	return
+						//}
+						_ = registerDocumentMapping(docMapping, d.(mapping.Classifier), name)
 						continue
 					}
 				}

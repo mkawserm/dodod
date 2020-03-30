@@ -1060,154 +1060,154 @@ func TestDatabase_Search(t *testing.T) {
 	}
 }
 
-func TestDatabase_ComplexSearch(t *testing.T) {
-	t.Helper()
-
-	dbPath := "/tmp/dodod"
-	dbPassword := ""
-
-	defer cleanupDb(t, dbPath)
-
-	db := &Database{}
-
-	if err := db.RegisterDocument(&CustomDocument{}); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	db.SetupDefaults()
-	db.SetDbPassword(dbPassword)
-	db.SetDbPath(dbPath)
-
-	err := db.Open()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	addData := []interface{}{&CustomDocument{
-		Id:           "1",
-		CustomField1: "1 value field 1",
-		CustomField2: "1 value field 2",
-	},
-		&CustomDocument{
-			Id:           "2",
-			CustomField1: "2 value field 1",
-			CustomField2: "2 value field 2",
-		},
-		&CustomDocument{
-			Id:           "3",
-			CustomField1: "3 value field 1",
-			CustomField2: "3 value field 2",
-		},
-		&CustomDocument{
-			Id:           "4",
-			CustomField1: "4 value field 1",
-			CustomField2: "4 value field 2",
-		},
-		&CustomDocument{
-			Id:           "5",
-			CustomField1: "5 value field 1",
-			CustomField2: "5 value field 2",
-		},
-		&CustomDocument{
-			Id:           "6",
-			CustomField1: "6 value field 1",
-			CustomField2: "6 value field 2",
-		},
-		&CustomDocument{
-			Id:           "7",
-			CustomField1: "7 value field 1",
-			CustomField2: "7 value field 2",
-		},
-		&CustomDocument{
-			Id:           "8",
-			CustomField1: "8 value field 1",
-			CustomField2: "8 value field 2",
-		},
-		&CustomDocument{
-			Id:           "9",
-			CustomField1: "9 value field 1",
-			CustomField2: "9 value field 2",
-		},
-		&CustomDocument{
-			Id:           "10",
-			CustomField1: "10 value field 1",
-			CustomField2: "10 value field 2",
-		},
-		&CustomDocument{
-			Id:           "11",
-			CustomField1: "11 value field 1",
-			CustomField2: "11 value field 2",
-		},
-		&CustomDocument{
-			Id:           "12",
-			CustomField1: "12 value field 1",
-			CustomField2: "12 value field 2",
-		},
-		&CustomDocument{
-			Id:           "13",
-			CustomField1: "13 value field 1",
-			CustomField2: "13 value field 2",
-		},
-		&CustomDocument{
-			Id:           "14",
-			CustomField1: "14 value field 1",
-			CustomField2: "14 value field 2",
-		},
-	}
-
-	if err := db.Create(addData); err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	db.SetSearchResultLimit(5)
-
-	// Now search data
-
-	//sortBy := []string{"-id"}
-	//queryType := "QueryString"
-	//limit := 10
-	//fields := []string{"*"}
-
-	//if total, _, result, err := db.ComplexSearch("value", fields, sortBy, queryType, 0, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//} else {
-	//	if len(result) != 10 {
-	//		t.Fatalf("result should be 10 but got %v", len(result))
-	//	}
-	//	if total != 14 {
-	//		t.Fatalf("total result should be 14 but got %v", total)
-	//	}
-	//
-	//	doc1 := result[0].(*CustomDocument)
-	//	doc2 := result[1].(*CustomDocument)
-	//	if doc1.Id == doc2.Id {
-	//		t.Fatalf("Document id should not be equal")
-	//	}
-	//	if doc1.CustomField1 == doc2.CustomField1 {
-	//		t.Fatalf("field should not be equal")
-	//	}
-	//	if doc1.CustomField2 == doc2.CustomField2 {
-	//		t.Fatalf("field should not be equal")
-	//	}
-	//	//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
-	//}
-	//
-	//if total, _, result, err := db.ComplexSearch("value", fields, sortBy, queryType, 5, limit); err != nil {
-	//	t.Fatalf("unexpected error: %v", err)
-	//} else {
-	//	if len(result) != 9 {
-	//		t.Fatalf("result should be 9 but got %v", len(result))
-	//	}
-	//	if total != 14 {
-	//		t.Fatalf("total result should be 14 but got %v", total)
-	//	}
-	//	//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
-	//}
-
-	if err := db.Close(); err != nil {
-		t.Fatalf("error occured while closing, error: %v", err)
-	}
-}
+//func TestDatabase_ComplexSearch(t *testing.T) {
+//	t.Helper()
+//
+//	dbPath := "/tmp/dodod"
+//	dbPassword := ""
+//
+//	defer cleanupDb(t, dbPath)
+//
+//	db := &Database{}
+//
+//	if err := db.RegisterDocument(&CustomDocument{}); err != nil {
+//		t.Fatalf("unexpected error: %v", err)
+//	}
+//
+//	db.SetupDefaults()
+//	db.SetDbPassword(dbPassword)
+//	db.SetDbPath(dbPath)
+//
+//	err := db.Open()
+//	if err != nil {
+//		t.Fatalf("unexpected error: %v", err)
+//	}
+//
+//	addData := []interface{}{&CustomDocument{
+//		Id:           "1",
+//		CustomField1: "1 value field 1",
+//		CustomField2: "1 value field 2",
+//	},
+//		&CustomDocument{
+//			Id:           "2",
+//			CustomField1: "2 value field 1",
+//			CustomField2: "2 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "3",
+//			CustomField1: "3 value field 1",
+//			CustomField2: "3 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "4",
+//			CustomField1: "4 value field 1",
+//			CustomField2: "4 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "5",
+//			CustomField1: "5 value field 1",
+//			CustomField2: "5 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "6",
+//			CustomField1: "6 value field 1",
+//			CustomField2: "6 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "7",
+//			CustomField1: "7 value field 1",
+//			CustomField2: "7 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "8",
+//			CustomField1: "8 value field 1",
+//			CustomField2: "8 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "9",
+//			CustomField1: "9 value field 1",
+//			CustomField2: "9 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "10",
+//			CustomField1: "10 value field 1",
+//			CustomField2: "10 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "11",
+//			CustomField1: "11 value field 1",
+//			CustomField2: "11 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "12",
+//			CustomField1: "12 value field 1",
+//			CustomField2: "12 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "13",
+//			CustomField1: "13 value field 1",
+//			CustomField2: "13 value field 2",
+//		},
+//		&CustomDocument{
+//			Id:           "14",
+//			CustomField1: "14 value field 1",
+//			CustomField2: "14 value field 2",
+//		},
+//	}
+//
+//	if err := db.Create(addData); err != nil {
+//		t.Fatalf("unexpected error: %v", err)
+//	}
+//
+//	db.SetSearchResultLimit(5)
+//
+//	// Now search data
+//
+//	//sortBy := []string{"-id"}
+//	//queryType := "QueryString"
+//	//limit := 10
+//	//fields := []string{"*"}
+//
+//	//if total, _, result, err := db.ComplexSearch("value", fields, sortBy, queryType, 0, limit); err != nil {
+//	//	t.Fatalf("unexpected error: %v", err)
+//	//} else {
+//	//	if len(result) != 10 {
+//	//		t.Fatalf("result should be 10 but got %v", len(result))
+//	//	}
+//	//	if total != 14 {
+//	//		t.Fatalf("total result should be 14 but got %v", total)
+//	//	}
+//	//
+//	//	doc1 := result[0].(*CustomDocument)
+//	//	doc2 := result[1].(*CustomDocument)
+//	//	if doc1.Id == doc2.Id {
+//	//		t.Fatalf("Document id should not be equal")
+//	//	}
+//	//	if doc1.CustomField1 == doc2.CustomField1 {
+//	//		t.Fatalf("field should not be equal")
+//	//	}
+//	//	if doc1.CustomField2 == doc2.CustomField2 {
+//	//		t.Fatalf("field should not be equal")
+//	//	}
+//	//	//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
+//	//}
+//	//
+//	//if total, _, result, err := db.ComplexSearch("value", fields, sortBy, queryType, 5, limit); err != nil {
+//	//	t.Fatalf("unexpected error: %v", err)
+//	//} else {
+//	//	if len(result) != 9 {
+//	//		t.Fatalf("result should be 9 but got %v", len(result))
+//	//	}
+//	//	if total != 14 {
+//	//		t.Fatalf("total result should be 14 but got %v", total)
+//	//	}
+//	//	//fmt.Println("Total: ", total, "| Query time:", queryTime, "| Result: ", result)
+//	//}
+//
+//	if err := db.Close(); err != nil {
+//		t.Fatalf("error occured while closing, error: %v", err)
+//	}
+//}
 
 func TestDatabase_EncodeDecodeDocument(t *testing.T) {
 	t.Helper()

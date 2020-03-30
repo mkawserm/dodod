@@ -123,16 +123,38 @@ func (m *mockErrorStruct1) Type() string {
 	return "mockErrorStruct1"
 }
 
-type mockErrorStruct2 struct {
-	Id    string `json:"id"`
-	T1    string `bleve:"-"`
-	Meta  string `bleve:"meta,store:false,index:false,include_term_vectors:false,include_in_all:false,doc_values:false"`
-	Meta1 string `bleve:"meta1,index1:false,include_in_all:false"`
-	Met2  string `bleve:"met2,index:false,include_in_all:false"`
+type mockCoverStruct1 struct {
+	Id       string      `json:"id"`
+	T1       string      `bleve:"-"`
+	T2       string      `bleve:"t2,analyzer:english"`
+	Meta     string      `bleve:"meta,store:false,index:false,include_term_vectors:false,include_in_all:false,doc_values:false"`
+	Meta1    string      `bleve:"meta1,index1:false,include_in_all:false"`
+	Met2     string      `bleve:"met2,index:false,include_in_all:false"`
+	Location GeoLocation `json:"location"`
 }
 
-func (m *mockErrorStruct2) Type() string {
-	return "mockErrorStruct2"
+func (m *mockCoverStruct1) Type() string {
+	return "mockCoverStruct1"
+}
+
+type mockCoverStruct2 struct {
+	Id       string      `json:"id"`
+	T1       string      `bleve:"-"`
+	T2       string      `bleve:"t2,analyzer:english"`
+	Meta     string      `bleve:"meta,store:false,index:false,include_term_vectors:false,include_in_all:false,doc_values:false"`
+	Meta1    string      `bleve:"meta1,index1:false,include_in_all:false"`
+	Met2     string      `bleve:"met2,index:false,include_in_all:false"`
+	Location GeoLocation `json:"location"`
+
+	CustomStruct *mockCoverStruct1 `json:"custom_struct"`
+
+	CustomStruct2 struct {
+		Name string `json:"name"`
+	} `json:"custom_struct_2"`
+}
+
+func (m *mockCoverStruct2) Type() string {
+	return "mockCoverStruct2"
 }
 
 func Test_registerDocumentMapping(t *testing.T) {
@@ -158,7 +180,7 @@ func Test_registerDocumentMapping(t *testing.T) {
 	}
 
 	m := bleve.NewIndexMapping()
-	if err := registerDocumentMapping(m, &mockErrorStruct2{}); err != nil {
+	if err := registerDocumentMapping(m, &mockCoverStruct2{}); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 	//d, _ :=json.Marshal(m)
