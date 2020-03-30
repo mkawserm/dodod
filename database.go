@@ -1319,25 +1319,19 @@ func (db *Database) ChangePassword(newPassword string) error {
 }
 
 func copyFile(src, dst string) error {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
+	if in, err := os.Open(src); err == nil {
+		defer func() {
+			_ = in.Close()
+		}()
+		if out, err := os.Create(dst); err == nil {
+			defer func() {
+				_ = out.Close()
+			}()
+			if _, err = io.Copy(out, in); err == nil {
+				return out.Close()
+			}
+		}
 	}
-	defer func() {
-		_ = in.Close()
-	}()
 
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		_ = out.Close()
-	}()
-
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	return out.Close()
+	return ErrFailedToCopy
 }

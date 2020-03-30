@@ -42,17 +42,19 @@ var ErrInvalidConfigFile = errors.New("dodod: invalid config file")
 
 var ErrJSONParseFailed = errors.New("dodod: failed to parse json data")
 
-var ErrInvalidBase = errors.New(`dodod: invalid base`)
-
-var ErrInvalidDoc = errors.New(`dodod: invalid doc, nil pointer`)
-
-var ErrInvalidDocNotStruct = errors.New(`dodod: invalid doc, not a struct`)
+//var ErrInvalidBase = errors.New(`dodod: invalid base`)
+//
+//var ErrInvalidDoc = errors.New(`dodod: invalid doc, nil pointer`)
+//
+//var ErrInvalidDocNotStruct = errors.New(`dodod: invalid doc, not a struct`)
 
 var ErrUnknownBaseType = errors.New(`dodod: unknown base type`)
 
 var ErrNonBooleanValueForBooleanField = errors.New(`dodod: non-boolean value for boolean field`)
 
-var ErrUnknownMappingField = errors.New(`dodod: tried to set mapping field of unknown type`)
+//var ErrUnknownMappingField = errors.New(`dodod: tried to set mapping field of unknown type`)
+
+var ErrFailedToCopy = errors.New("dodod: failed to copy file")
 
 //func IsWrongPassword(err error) bool {
 //	return ErrSecretsPassword == err
