@@ -1754,9 +1754,10 @@ func TestDatabaseTable(t *testing.T) {
 		input["query"] = map[string]interface{}{
 			"name": "Fuzzy",
 			"p": map[string]interface{}{
-				"term":      "2",
-				"fuzziness": 3,
-				"field":     "id",
+				"term":          "2",
+				"fuzziness":     3,
+				"field":         "id",
+				"prefix_length": 5,
 			},
 		}
 		if _, err := db.Search(input, "bleveSearchResult"); err == nil {
