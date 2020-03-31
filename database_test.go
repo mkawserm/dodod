@@ -1557,10 +1557,10 @@ func TestDatabaseTable(t *testing.T) {
 //}
 //
 //func (b *mockBleveIndexOpener) BleveIndex(dbPath string,
-//	indexMapping *mapping.IndexMappingImpl,
+//	internalIndexMapping *mapping.IndexMappingImpl,
 //	indexName string,
 //	config map[string]interface{}) (bleve.Index, error) {
-//	return bleve.NewMemOnly(indexMapping)
+//	return bleve.NewMemOnly(internalIndexMapping)
 //}
 
 func TestDatabase_GeoSearch(t *testing.T) {
@@ -1596,7 +1596,7 @@ func TestDatabase_GeoSearch(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	db.GetIndexMapping()
+	db.GetInternalIndexMapping()
 
 	testData := []interface{}{
 		&FirstMixedType{
@@ -1723,10 +1723,10 @@ func TestDatabase_GeoSearch(t *testing.T) {
 	db.SetupDefaults()
 	db.SetIndexOpener(&mockBleveIndexOpener{})
 
-	db.indexMapping = bleve.NewIndexMapping()
+	db.internalIndexMapping = bleve.NewIndexMapping()
 	documentMapping := bleve.NewDocumentMapping()
 	documentMapping.AddFieldMappingsAt("location", bleve.NewGeoPointFieldMapping())
-	db.indexMapping.AddDocumentMapping("FirstMixedType", documentMapping)
+	db.internalIndexMapping.AddDocumentMapping("FirstMixedType", documentMapping)
 
 	// Open database
 	if err := db.Open(); err != nil {

@@ -26,8 +26,6 @@ type Database struct {
 	verifierCredentialsRW pasap.VerifierCredentialsRW
 	indexOpener           IndexOpener
 
-	indexMapping *mapping.IndexMappingImpl
-
 	dbPath     string
 	dbPassword string
 
@@ -39,6 +37,7 @@ type Database struct {
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]interface{}
 
+	internalIndexMapping   *mapping.IndexMappingImpl
 	internalIndex          bleve.Index
 	internalDb             *badger.DB
 	internalIndexStoreName string
@@ -52,8 +51,8 @@ func (db *Database) GetInternalIndex() bleve.Index {
 	return db.internalIndex
 }
 
-func (db *Database) GetIndexMapping() *mapping.IndexMappingImpl {
-	return db.indexMapping
+func (db *Database) GetInternalIndexMapping() *mapping.IndexMappingImpl {
+	return db.internalIndexMapping
 }
 
 func (db *Database) initAll() {
@@ -112,12 +111,12 @@ func (db *Database) SetIndexStoreName(indexStoreName string) {
 	db.internalIndexStoreName = indexStoreName
 }
 
-//func (db *Database) SetIndexMapping(indexMapping *mapping.IndexMappingImpl) {
-//	db.indexMapping = indexMapping
+//func (db *Database) SetIndexMapping(internalIndexMapping *mapping.IndexMappingImpl) {
+//	db.internalIndexMapping = internalIndexMapping
 //}
 
-//func (db *Database) GetIndexMapping() *mapping.IndexMappingImpl {
-//	return db.indexMapping
+//func (db *Database) GetInternalIndexMapping() *mapping.IndexMappingImpl {
+//	return db.internalIndexMapping
 //}
 
 func (db *Database) SetupDefaults() {
@@ -182,8 +181,8 @@ func (db *Database) Close() error {
 }
 
 func (db *Database) initIndexMapping() {
-	if db.indexMapping == nil {
-		db.indexMapping = bleve.NewIndexMapping()
+	if db.internalIndexMapping == nil {
+		db.internalIndexMapping = bleve.NewIndexMapping()
 	}
 }
 
@@ -217,7 +216,7 @@ func (db *Database) RegisterDocument(d interface{}) error {
 	if !canRegister {
 		return ErrFieldTypeMismatch
 	}
-	if err := registerDocumentMapping(db.indexMapping, document); err != nil {
+	if err := registerDocumentMapping(db.internalIndexMapping, document); err != nil {
 		return err
 	}
 
@@ -1195,7 +1194,7 @@ func (db *Database) openDb() error {
 
 	if db.internalIndexStoreName == "badger" {
 		index, err = db.indexOpener.BleveIndex(db.dbPath,
-			db.indexMapping,
+			db.internalIndexMapping,
 			upsidedown.Name,
 			map[string]interface{}{
 				"BdodbConfig": &bdodb.Config{
@@ -1206,7 +1205,7 @@ func (db *Database) openDb() error {
 	} else {
 		db.indexOpener.SetEngineName("boltdb")
 		index, err = db.indexOpener.BleveIndex(db.dbPath,
-			db.indexMapping,
+			db.internalIndexMapping,
 			scorch.Name,
 			map[string]interface{}{
 				"BdodbConfig": &bdodb.Config{
