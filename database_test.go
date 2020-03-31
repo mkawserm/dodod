@@ -440,6 +440,17 @@ func TestDatabase_Create(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	if err := db.Create([]interface{}{map[string]string{"id": "1"}}); err != ErrInvalidDocument {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.Create([]interface{}{&MyTestDocument{
+		Id:   "",
+		Name: "Test1",
+	}}); err != ErrIdCanNotBeEmpty {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
 	//if err := db.Create([]Document{&MyTestDocument{
 	//	Id:   "1",
 	//	Name: "Test1",
@@ -546,7 +557,7 @@ func TestDatabase_CRUD(t *testing.T) {
 		}
 	}
 
-	if n, data, err := db.Read([]string{"1", "2"}); err != nil {
+	if n, data, err := db.Read([]string{"1", "", "2"}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
 		if n != 1 {
@@ -575,6 +586,17 @@ func TestDatabase_CRUD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	if err := db.Update([]interface{}{map[string]string{"id": "1"}}); err != ErrInvalidDocument {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.Update([]interface{}{&MyTestDocument{
+		Id:   "",
+		Name: "Test1",
+	}}); err != ErrIdCanNotBeEmpty {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
 	if n, err := db.GetDocument(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	} else {
@@ -592,6 +614,17 @@ func TestDatabase_CRUD(t *testing.T) {
 	}
 
 	if err := db.Delete(data); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.Delete([]interface{}{map[string]string{"id": "1"}}); err != ErrInvalidDocument {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := db.Delete([]interface{}{&MyTestDocument{
+		Id:   "",
+		Name: "Test1",
+	}}); err != ErrIdCanNotBeEmpty {
 		t.Fatalf("unexpected error: %v", err)
 	}
 

@@ -159,23 +159,23 @@ func (db *Database) Open() error {
 func (db *Database) Close() error {
 	db.isDbReady = false
 
-	var err1 error
-	var err2 error
+	//var err1 error
+	//var err2 error
 
 	if db.internalIndex != nil {
-		err1 = db.internalIndex.Close()
+		_ = db.internalIndex.Close()
 	}
 	if db.internalDb != nil {
-		err2 = db.internalDb.Close()
+		_ = db.internalDb.Close()
 	}
 
-	if err1 == nil && err2 == nil {
-		return nil
-	} else if err1 != nil {
-		return err1
-	} else if err2 != nil {
-		return err2
-	}
+	//if err1 == nil && err2 == nil {
+	//	return nil
+	//} else if err1 != nil {
+	//	return err1
+	//} else if err2 != nil {
+	//	return err2
+	//}
 
 	return nil
 }
@@ -216,9 +216,11 @@ func (db *Database) RegisterDocument(d interface{}) error {
 	if !canRegister {
 		return ErrFieldTypeMismatch
 	}
-	if err := registerDocumentMapping(db.internalIndexMapping, document); err != nil {
-		return err
-	}
+
+	_ = registerDocumentMapping(db.internalIndexMapping, document)
+	//if err := registerDocumentMapping(db.internalIndexMapping, document); err != nil {
+	//	return err
+	//}
 
 	for k, v := range fields {
 		_, exists := db.fieldsRegistryCache[k]
