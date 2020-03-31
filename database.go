@@ -637,6 +637,21 @@ func (db *Database) Read(data []string) (uint64, []interface{}, error) {
 	return uint64(readCount), output[:readCount], nil
 }
 
+func (db *Database) IsDocumentExists(id string) bool {
+	if !db.IsDatabaseReady() {
+		return false
+	}
+
+	internalBatchTxn := db.internalDb.NewTransaction(false)
+	defer internalBatchTxn.Discard()
+
+	if _, err := internalBatchTxn.Get([]byte(id)); err == nil {
+		return true
+	} else {
+		return false
+	}
+}
+
 func (db *Database) GetDocument(data []interface{}) (uint64, error) {
 	if !db.IsDatabaseReady() {
 		return 0, ErrDatabaseIsNotOpen
@@ -782,6 +797,18 @@ func (db *Database) DeleteIndex(data []interface{}) error {
 	}
 
 	return db.internalIndex.Batch(batch)
+}
+
+func (db *Database) IsIndexExists(id string) bool {
+	if !db.IsDatabaseReady() {
+		return false
+	}
+
+	if v, _ := db.internalIndex.Document(id); v == nil {
+		return false
+	} else {
+		return true
+	}
 }
 
 // Search using the input params into the index store

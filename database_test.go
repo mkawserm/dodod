@@ -669,6 +669,10 @@ func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	if v := db.IsDocumentExists("1"); v {
+		t.Fatalf("Document should not exists")
+	}
+
 	if err := db.UpdateDocument([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
@@ -693,11 +697,19 @@ func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
 		t.Fatalf("database should be ready")
 	}
 
+	if v := db.IsDocumentExists("1"); v {
+		t.Fatalf("Document should not exists")
+	}
+
 	if err := db.CreateDocument([]interface{}{&MyTestDocument{
 		Id:   "1",
 		Name: "Test1",
 	}}); err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if v := db.IsDocumentExists("1"); !v {
+		t.Fatalf("Document should exists")
 	}
 
 	data := []interface{}{&MyTestDocument{Id: "1"}}
@@ -769,6 +781,10 @@ func TestDatabase_CreateIndex(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	if b := db.IsIndexExists("1"); b != false {
+		t.Fatalf("unexpected existance report")
+	}
+
 	err := db.Open()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -781,8 +797,15 @@ func TestDatabase_CreateIndex(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	if b := db.IsIndexExists("1"); b {
+		t.Fatalf("Index should not exists")
+	}
 	if err := db.CreateIndex(data); err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if b := db.IsIndexExists("1"); !b {
+		t.Fatalf("Index should exists")
 	}
 }
 
