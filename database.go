@@ -33,6 +33,7 @@ type Database struct {
 	encodedKey          string
 	isPasswordProtected bool
 	isDbReady           bool
+	isReadOnly          bool
 
 	fieldsRegistryCache   map[string]string
 	documentRegistryCache map[string]interface{}
@@ -41,6 +42,10 @@ type Database struct {
 	internalIndex          bleve.Index
 	internalDb             *badger.DB
 	internalIndexStoreName string
+}
+
+func (db *Database) SetReadOnly(b bool) {
+	db.isReadOnly = b
 }
 
 func (db *Database) GetInternalDatabase() *badger.DB {
@@ -124,6 +129,7 @@ func (db *Database) SetupDefaults() {
 	db.encoderCredentialsRW = &pasap.ByteBasedEncoderCredentials{}
 	db.verifierCredentialsRW = &pasap.ByteBasedVerifierCredentials{}
 	db.indexOpener = &BleveIndexOpener{}
+	db.isReadOnly = false
 
 	db.initAll()
 	db.initIndexMapping()
@@ -1226,6 +1232,7 @@ func (db *Database) openDb() error {
 			db.internalIndexMapping,
 			upsidedown.Name,
 			map[string]interface{}{
+				"ReadOnly": db.isReadOnly,
 				"BdodbConfig": &bdodb.Config{
 					EncryptionKey: db.secretKey,
 					Logger:        DefaultLogger,
@@ -1237,6 +1244,7 @@ func (db *Database) openDb() error {
 			db.internalIndexMapping,
 			scorch.Name,
 			map[string]interface{}{
+				"ReadOnly": db.isReadOnly,
 				"BdodbConfig": &bdodb.Config{
 					EncryptionKey: db.secretKey,
 				},
@@ -1249,7 +1257,7 @@ func (db *Database) openDb() error {
 
 	/* Main DataStore */
 	opt := badger.DefaultOptions(db.dbPath + "/database")
-	opt.ReadOnly = false
+	opt.ReadOnly = db.isReadOnly
 	opt.Truncate = true
 	opt.TableLoadingMode = options.LoadToRAM
 	opt.ValueLogLoadingMode = options.MemoryMap

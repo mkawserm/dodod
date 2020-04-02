@@ -659,6 +659,7 @@ func TestDatabase_DOCUMENT_CRUD(t *testing.T) {
 	}
 
 	db.SetupDefaults()
+	db.SetReadOnly(false)
 	db.SetDbPassword(dbPassword)
 	db.SetDbPath(dbPath)
 
